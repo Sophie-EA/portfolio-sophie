@@ -1,0 +1,173 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+:root {
+  --rows: 5;
+  --cols: 5;
+  --cell: 100px;
+}
+
+.board {
+  /* grille logique pour placer les pièces */
+  position: relative;
+  margin: 40px auto;
+    inline-size: calc(var(--cols) * var(--cell));
+  block-size:  calc(var(--rows) * var(--cell));
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--cell));
+  grid-template-rows: repeat(var(--rows), var(--cell));
+  border: 2px solid #000;
+
+  /* fond global (optionnel) */
+  background-image: url("./img/font.jpg");
+  background-size: calc(100% / var(--cols)) calc(100% / var(--rows));
+  background-position: top left;
+}
+
+.piece {
+  width: var(--cell);
+  height: var(--cell);
+  place-self: center; /* centre dans sa cellule grid */
+  object-fit: contain;
+  z-index: 2;
+  visibility: hidden; /* rendu après placement */
+}
+
+.player {
+  z-index: 3;
+}
+.box {
+  z-index: 2;
+}
+
+/* overlay: cibles en background(s) multiples */
+.goals {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  /* IMPORTANT: ces tailles sont mises à jour en JS pour coller à la cellule */
+  --cell-w: 64px;
+  --cell-h: 64px;
+
+  background-repeat: no-repeat; /* chaque layer ne se répète pas */
+  background-size: var(--cell-w) var(--cell-h); /* s'applique à tous les layers */
+}
+button {
+  background-color: rgb(46, 192, 46);
+  width: 120px;
+  padding: 10px;
+  border-radius: 20px;
+  font-weight: bold;
+  box-shadow: 4px 5px 11px rgba(9, 172, 9, 0.749);
+  margin: 10px;
+}
+.contener {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* base immobile */
+#msg.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font: 700 2rem system-ui;
+  z-index: 10;
+}
+
+/* La couche suit la grille du board */
+#walls.layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-template-rows: repeat(var(--rows), 1fr);
+  pointer-events: none; /* les murs ne captent pas la souris */
+}
+
+/* Tes pièces réutilisent déjà .piece */
+.piece.wall {
+  z-index: 1; /* sous les caisses (2) et le joueur si besoin */
+  /* visibility: hidden est dans .piece ; tu rends visible via place(...,{visible:true}) */
+}
+#msg {
+  text-align: center;
+}
+
+#goals {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--cell));
+  grid-template-rows: repeat(var(--rows), var(--cell));
+  pointer-events: none;
+}
+
+
+/* La case-cible sert de "bouchon" pour masquer font.jpg sous la forme */
+.goal {
+  position: relative;
+  width: var(--cell);
+  height: var(--cell);
+
+  /* BOUCHON uni qui remplace le terrain à l'intérieur de la zone de la cible */
+  background: #eaeaea;  /* choisis la couleur "sol" souhaitée */
+
+  /* variables */
+  --goal-color: #9990;
+  --occupy-color: #0000;
+}
+
+/* Pseudo-élément qui porte le MASQUE + les 2 backgrounds empilés:
+   1) TOP: font-cible.png (toujours visible)
+   2) BOTTOM: teinte colorée (visible sous l'icône) */
+.goal::before {
+  content: "";
+  position: absolute; inset: 0;
+
+  /* 2 backgrounds: le premier est AU-DESSUS */
+  background-image:
+    url("./img/goal-shape.png"),
+    linear-gradient(var(--goal-color), var(--goal-color));
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+  background-size: 100% 100%, 100% 100%;
+}
+
+/* Overlay match/mismatch au-dessus de tout */
+.goal::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--occupy-color);
+
+  /* même découpe, pour rester dans la forme */
+  -webkit-mask: url("./img/goal-shape.png") center/100% 100% no-repeat;
+  mask:         url("./img/goal-shape.png") center/100% 100% no-repeat;
+}
+
+/* palette (ajuste l'alpha si besoin) */
+.goal[data-goal="pink"]   { --goal-color: #ff7ab888; }
+.goal[data-goal="blue"]   { --goal-color: #58a6ff88; }
+.goal[data-goal="yellow"] { --goal-color: #ffd54d88; }
+.goal[data-goal="green"]  { --goal-color: #4cd96488; }
+
+/* états d’occupation */
+.goal[data-occupant="pink"].goal[data-goal="pink"],
+.goal[data-occupant="blue"].goal[data-goal="blue"],
+.goal[data-occupant="yellow"].goal[data-goal="yellow"],
+.goal[data-occupant="green"].goal[data-goal="green"] {
+  --occupy-color: #27ae6088;  /* match */
+}
+.goal[data-occupant]:not([data-occupant=""]):not(.goal[data-goal="pink"][data-occupant="pink"]):not(.goal[data-goal="blue"][data-occupant="blue"]):not(.goal[data-goal="yellow"][data-occupant="yellow"]):not(.goal[data-goal="green"][data-occupant="green"]) {
+  --occupy-color: #e74c3c88;  /* mismatch */
+}
+#level-info {
+  color: #333;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}

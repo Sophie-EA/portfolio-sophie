@@ -1,52 +1,86 @@
-document.querySelectorAll(".project").forEach((project) => {
-  project.addEventListener("click", () => {
-    project.classList.toggle("active");
-  });
+// ===== CARROUSEL MULTI-CARDS (corrigé) =====
+const trackMulti = document.querySelector('.carousel-track-multi');
+const slides = Array.from(trackMulti.children);
+const nextBtn = document.querySelector('.carousel-arrow.next');
+const prevBtn = document.querySelector('.carousel-arrow.prev');
+
+let currentIndex = 0;
+const slidesPerView = window.innerWidth <= 600 ? 1 : window.innerWidth <= 992 ? 2 : 3;
+
+const moveToSlide = (index) => {
+    const slideWidth = slides[0].getBoundingClientRect().width;
+    const gap = 32; // 2rem en px
+    const amountToMove = -index * (slideWidth + gap);
+    trackMulti.style.transform = `translateX(${amountToMove}px)`;
+    currentIndex = index;
+};
+
+nextBtn.addEventListener('click', () => {
+    const maxIndex = slides.length - slidesPerView;
+    const nextIndex = currentIndex >= maxIndex ? 0 : currentIndex + 1;
+    moveToSlide(nextIndex);
 });
 
-document.addEventListener("DOMContentLoaded", function () {
-  const pathElement = document.getElementById("myAnimatedPath");
-  if (!pathElement) return; // Vérifie que l'élément existe
+prevBtn.addEventListener('click', () => {
+    const maxIndex = slides.length - slidesPerView;
+    const prevIndex = currentIndex <= 0 ? maxIndex : currentIndex - 1;
+    moveToSlide(prevIndex);
+});
 
-  let originalD = pathElement.getAttribute("d");
-  const pathDataRegex = /([MQTLVHCSAZ])([^MQTLVHCSAZ]*)/gi;
-  let parsedPath = [];
-  let match;
+// Swipe mobile
+let touchStartX = 0;
+trackMulti.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+}, {passive: true});
 
-  // Parse le chemin SVG
-  while ((match = pathDataRegex.exec(originalD)) !== null) {
-    const command = match[1];
-    const coords = match[2].trim().split(/\s+/).filter(Boolean).map(Number);
-    parsedPath.push({ command, coords });
-  }
+trackMulti.addEventListener('touchend', e => {
+    const touchEndX = e.changedTouches[0].screenX;
+    if (touchEndX < touchStartX - 50) nextBtn.click();
+    if (touchEndX > touchStartX + 50) prevBtn.click();
+}, {passive: true});
 
-  let frame = 0;
-  const amplitudeX = 60;
-  const frequencyX = 0.01;
-  const amplitudeY = 8;
-  const frequencyY = 0.006;
+// ===== ANIMATION SVG (courbe subtile) =====
+// Si tu veux garder une animation très douce sur la ligne :
+const bezierPath = document.querySelector('.bezier-line path');
 
-  function animatePath() {
-    const animatedPath = parsedPath
-      .map((segment) => {
-        let newCoords = [...segment.coords];
-        for (let i = 0; i < newCoords.length; i += 2) {
-          const x = newCoords[i];
-          const y = newCoords[i + 1] || 0;
-          // Applique une oscillation sinusoïdale
-          newCoords[i] =
-            x + Math.sin(frame * frequencyX + i * 0.5) * amplitudeX;
-          newCoords[i + 1] =
-            y + Math.sin(frame * frequencyY + i * 0.3) * amplitudeY;
+if (bezierPath) {
+    // Animation d'onde très subtile (optionnelle)
+    let offset = 0;
+    const originalD = bezierPath.getAttribute('d');
+    
+    // Animation légère de l'opacité ou du stroke-dashoffset au lieu de modifier les points (évite les NaN)
+    let growing = true;
+    setInterval(() => {
+        if (growing) {
+            bezierPath.style.strokeOpacity = 0.25;
+            bezierPath.style.strokeWidth = 1.5;
         }
-        return segment.command + " " + newCoords.join(" ");
-      })
-      .join(" ");
-
-    pathElement.setAttribute("d", animatedPath);
-    frame += 0.05;
-    requestAnimationFrame(animatePath);
-  }
-
-  animatePath(); // Lance l'animation
-});
+        growing = !growing;
+    }, 3000); // Change toutes les 3 secondes très doucement
+    
+    // OU si tu veux l'effet "dessin" de la ligne :
+    const length = bezierPath.getTotalLength();
+    bezierPath.style.strokeDasharray = length;
+    bezierPath.style.strokeDashoffset = length;
+    
+    // Animation CSS-like en JS pour le dessin
+    let progress = 0;
+    const drawLine = () => {
+        progress += 0.005; // Très lent
+        if (progress > 1) progress = 1;
+        bezierPath.style.strokeDashoffset = length * (1 - progress);
+        if (progress < 1) requestAnimationFrame(drawLine);
+    };
+    
+    // Démarre l'animation au scroll quand la section est visible
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                drawLine();
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.5 });
+    
+    observer.observe(document.querySelector('.bezier-line'));
+}

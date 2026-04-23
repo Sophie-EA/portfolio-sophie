@@ -1,5 +1,7 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 // 1. Connexion BDD et Template
 require_once __DIR__ . '/config/db.php';
@@ -47,105 +49,178 @@ $template->section('content');
     </div>
 </section>
 
-<!-- SECTION PROJETS (Dynamique - remplace les 8 cards statiques) -->
+<!-- SECTION PROJETS (Dynamique - Grille régulière) -->
 <section class="card-project" id="projects">
-    <?php if (empty($projects)): ?>
-        <p>Aucun projet à afficher pour le moment.</p>
-    <?php else: ?>
-        <?php foreach ($projects as $project): ?>
-        <article class="card">
-            <figure class="card_media">
-                <img src="/public/images/<?= htmlspecialchars($project['image']) ?>" 
-                     alt="Aperçu du projet <?= htmlspecialchars($project['title']) ?>" />
-                <figcaption class="sr-only">Aperçu du projet <?= htmlspecialchars($project['title']) ?></figcaption>
-            </figure>
-            <div class="contenu">
-                <h4><?= htmlspecialchars($project['title']) ?></h4>
-                <p><?= htmlspecialchars($project['description']) ?></p>
-                <a href="projet.php?id=<?= $project['id'] ?>" class="btn-voir">Voir le projet →</a>
-            </div>
-        </article>
-        <?php endforeach; ?>
-    <?php endif; ?>
-</section>
-
-<!-- SECTION À PROPOS (Copiée depuis ancien.html) -->
-<section class="aPropos" id="about">
-    <article>
-        <h2>À propos</h2>
-        <p>
-            Ancienne responsable de secteur dans l'agroalimentaire, j'ai dirigé
-            des équipes, géré des urgences et accompagné mes collaborateurs au
-            quotidien. Ce que j'aimais ? Être sur le terrain, résoudre des
-            problèmes concrets, transmettre des compétences… et surtout, faire
-            avancer les choses avec rigueur et bienveillance. Mais après un
-            burn-out, j'ai pris le temps de me questionner sur ce que je voulais
-            vraiment. Ce que j'aime profondément : comprendre, apprendre, créer,
-            évoluer. Le développement web est vite devenu une évidence.
-            Aujourd'hui en formation "Développeur Web et Web Mobile" jusqu'en
-            juin 2026, je pose des bases solides : HTML, CSS, et mes premiers
-            pas en JavaScript. J'avance à mon rythme, avec passion et méthode.
-            J'aspire à concevoir des applications utiles, éthiques et
-            responsables, à l'image de mes valeurs : le respect du vivant, le
-            goût du travail bien fait et l'envie de participer à un monde plus
-            résilient. Bientôt à la recherche d'un stage, je construis ce
-            portfolio pour partager mon parcours, mes projets, et ma vision d'un
-            web plus sobre, plus humain. Vous avez une mission, une idée, ou
-            simplement envie d'échanger ? Je serais ravie d'en discuter.
-        </p>
-    </article>
-</section>
-
-<!-- SECTION AVIS (Avec ton SVG et les 4 cards) -->
-<h2 id="titreAvis">Qu'en pense t-on?</h2>
-<section class="avisClient" id="avis">
-    <!-- SVG courbe de Bezier -->
-    <svg
-        id="BackgroundAvis"
-        xmlns="http://www.w3.org/2000/svg"
-    >
-        <path
-            id="myAnimatedPath"
-            d="M -70 300 Q 90 330 180 530 T 300 285 T 500 290 T 780 280 T 990 280 T 1240 270 T 1450 290 T 1690 300 T 1980 290 T 2170 280 T 2330 260 T 2540 280 T 2570 300 T 2800 260"
-            stroke="var(--color1)"
-            stroke-width="3"
-            fill="var(--color1)"
-        />
-    </svg>
-    <div class="contenerCardAvis">
-        <article class="cardAvis">
-            <img src="/public/images/prof1.jpg" alt="image profile" id="imgProfil" />
-            <div class="contenuAvis">
-                <h4>Nom personne</h4>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloribus illo quae nesciunt ipsa temporibus illum!</p>
-            </div>
-        </article>
-        <article class="cardAvis">
-            <img src="/public/images/prof2.jpg" alt="image profile" id="imgProfil" />
-            <div class="contenuAvis">
-                <h4>Nom personne</h4>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloribus illo quae nesciunt ipsa temporibus illum!</p>
-            </div>
-        </article>
-        <article class="cardAvis">
-            <img src="/public/images/prof3.jpg" alt="image profile" id="imgProfil" />
-            <div class="contenuAvis">
-                <h4>Nom personne</h4>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloribus illo quae nesciunt ipsa temporibus illum!</p>
-            </div>
-        </article>
-        <article class="cardAvis">
-            <img src="/public/images/prof4.png" alt="image profile" id="imgProfil" />
-            <div class="contenuAvis">
-                <h4>Nom personne</h4>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloribus illo quae nesciunt ipsa temporibus illum!</p>
-            </div>
-        </article>
+    <h2 class="section-title">Mes Projets</h2>
+    <?php
+    // Récupérer tous les projets depuis la DB
+    $projects = $db->query("SELECT * FROM projects ORDER BY created_at DESC")->fetchAll();
+    ?>
+    <div class="projects-grid">
+        <?php if (empty($projects)): ?>
+            <p class="no-projects">Aucun projet à afficher pour le moment.</p>
+        <?php else: ?>
+            <?php foreach ($projects as $project): ?>
+            <article class="card">
+            <img src="/public/images/projects/<?= htmlspecialchars($project['image']) ?>" 
+                 alt="<?= htmlspecialchars($project['title']) ?>" />
+            <h3><?= htmlspecialchars($project['title']) ?></h3>
+            <p><?= htmlspecialchars($project['description']) ?></p>
+            <?php if (!empty($project['slug'])): ?>
+                <a href="/projet.php?slug=<?= $project['slug'] ?>" class="btn">
+            <?php else: ?>
+                <a href="/projet.php?id=<?= $project['id'] ?>" class="btn">
+            <?php endif; ?>
+            Voir le projet</a>
+            </article>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </section>
 
+
+<!-- SECTION À PROPOS  -->
+<section class="timeline-section" id="about">
+    <h2 class="timeline-title">Mon parcours</h2>
+    
+    <div class="timeline-container">
+        
+        <!-- Étape 1 : Passé -->
+        <div class="timeline-item">
+            <div class="timeline-dot" aria-hidden="true"></div>
+            <div class="timeline-content left">
+                <span class="timeline-date">Avant</span>
+                <h3>Manager en agroalimentaire</h3>
+                <p>Responsable de secteur, j'ai dirigé des équipes, géré des urgences et accompagné mes collaborateurs avec <strong>rigueur et bienveillance</strong>.</p>
+                <p>Ce que j'aimais : être sur le terrain, résoudre des problèmes concrets, transmettre.</p>
+            </div>
+        </div>
+
+        <!-- Étape 2 : Le tournant -->
+        <div class="timeline-item">
+            <div class="timeline-dot highlight" aria-hidden="true"></div>
+            <div class="timeline-content right">
+                <span class="timeline-date">Le tournant</span>
+                <h3>Remise en question</h3>
+                <p>Après un burn-out, j'ai pris le temps de me demander ce que je voulais <em>vraiment</em> faire.</p>
+                <p>Envie de comprendre, créer, évoluer... Le développement web est devenu une évidence.</p>
+            </div>
+        </div>
+
+        <!-- Étape 3 : Maintenant -->
+        <div class="timeline-item">
+            <div class="timeline-dot active" aria-hidden="true"></div>
+            <div class="timeline-content left">
+                <span class="timeline-date now">Aujourd'hui</span>
+                <h3>Développeuse Web & Mobile</h3>
+                <p>En formation jusqu'en juin 2026. Je pose des bases solides : HTML, CSS, JavaScript, et monte en compétence PHP/SQL.</p>
+                <div class="skills-tags">
+                    <span>Frontend</span>
+                    <span>Backend</span>
+                    <span>Accessibilité</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étape 4 : Futur -->
+        <div class="timeline-item">
+            <div class="timeline-dot future" aria-hidden="true"></div>
+            <div class="timeline-content right">
+                <span class="timeline-date">Bientôt</span>
+                <h3>À la recherche d'un emploi</h3>
+                <p>Je veux concevoir des applications <strong>utiles, éthiques et responsables</strong>.</p>
+                <p>Convaincue qu'un web plus sobre et plus humain est possible.</p>
+                <a href="#contact" class="timeline-cta">Me contacter</a>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- SECTION AVIS (Avec ton SVG et les 4 cards) -->
+<h2 id="titreAvis">Qu'en pense t-on?</h2>
+<section class="avis-section" id="avis">
+    
+    <!-- La courbe de Bézier originale, mais allégée -->
+    <svg class="bezier-line" viewBox="0 0 3000 600" preserveAspectRatio="none" aria-hidden="true">
+        <path 
+            d="M -70 300 Q 90 330 180 530 T 300 285 T 500 290 T 780 280 T 990 280 T 1240 270 T 1450 290 T 1690 300 T 1980 290 T 2170 280 T 2330 260 T 2540 280 T 2570 300 T 2800 260"
+            fill="none"
+            stroke="var(--color1)"
+            stroke-width="1.5"
+            stroke-opacity="0.25"
+            stroke-linecap="round"
+        />
+    </svg>
+
+    <h2 class="avis-title">Témoignages</h2>
+
+    <div class="carousel-multi">
+        <button class="carousel-arrow prev" aria-label="Précédent">❮</button>
+        
+        <div class="carousel-viewport">
+            <div class="carousel-track-multi">
+                
+                <!-- Card 1 -->
+                <article class="avis-card-small">
+                    <div class="avis-header">
+                        <img src="/public/images/prof1.jpg" alt="" class="avis-avatar">
+                        <div class="avis-meta">
+                            <h4>Marie Dupont</h4>
+                            <span>Formatrice DWWM</span>
+                        </div>
+                    </div>
+                    <p>"Sophie apporte une rigueur managériale rare. Sa capacité à structurer un projet est un atout majeur."</p>
+                </article>
+
+                <!-- Card 2 -->
+                <article class="avis-card-small">
+                    <div class="avis-header">
+                        <img src="/public/images/prof2.jpg" alt="" class="avis-avatar">
+                        <div class="avis-meta">
+                            <h4>Jean Martin</h4>
+                            <span>Lead Dev</span>
+                        </div>
+                    </div>
+                    <p>"Un sens du détail exemplaire. Ses maquettes sont toujours soignées et pertinentes."</p>
+                </article>
+
+                <!-- Card 3 -->
+                <article class="avis-card-small">
+                    <div class="avis-header">
+                        <img src="/public/images/prof3.jpg" alt="" class="avis-avatar">
+                        <div class="avis-meta">
+                            <h4>Lucas Bernard</h4>
+                            <span>Collègue</span>
+                        </div>
+                    </div>
+                    <p>"Communication claire et deadlines respectées. Travail d'équipe impeccable."</p>
+                </article>
+
+                <!-- Card 4 -->
+                <article class="avis-card-small">
+                    <div class="avis-header">
+                        <img src="/public/images/prof4.png" alt="" class="avis-avatar">
+                        <div class="avis-meta">
+                            <h4>Sarah Cohen</h4>
+                            <span>Responsable RH</span>
+                        </div>
+                    </div>
+                    <p>"Son parcours atypique lui donne une perspective unique sur les besoins métier."</p>
+                </article>
+
+            </div>
+        </div>
+
+        <button class="carousel-arrow next" aria-label="Suivant">❯</button>
+    </div>
+</section>
+
+
+
 <!-- SECTION CONTACT (Formulaire + Réseaux) -->
-<h4>Contact via le formulaire ou les réseaux</h4>
+<h4 class="title-reseau">Contact via le formulaire ou les réseaux</h4>
 <section class="formContact" id="contact">
     <div class="formulaire">
         <form action="" method="POST">
