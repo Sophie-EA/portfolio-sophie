@@ -1,97 +1,125 @@
 /* ==========================================
-   SOKOBAN — CSS complet
+   SOKOBAN — CSS intégré au template standard
    ========================================== */
-
-/* Zone globale */
-#sokoban-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
+[hidden] {
+  display: none !important;
+}
+/* ---------- Container dans le flux ---------- */
+.sokoban-game-outer {
   width: 100%;
+  overflow-x: auto;            /* scroll si le plateau dépasse */
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 1rem;
+  margin-top: 1.5rem;
+  box-sizing: border-box;
 }
 
-/* Header avec lien de retour */
-.game-header {
-  width: 100%;
-  max-width: 720px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.btn-retour {
-  text-decoration: none;
-  color: inherit;
-  font-weight: 600;
-  padding: 0.4rem 0.8rem;
-  border: 2px solid currentColor;
-  border-radius: 6px;
-  transition: transform .15s;
-}
-.btn-retour:hover {
-  transform: translateX(-3px);
-}
-
+/* Info niveau */
 .level-info {
   font-weight: 700;
   font-size: 1.1rem;
+  margin-bottom: 1rem;
+  text-align: center;
 }
-
-/* === Plateau de jeu === */
-/* Le plateau n’a plus de fond global */
-#board {
+.ul-instruction {
+  text-align: start;
+}
+.li-instruction {
+  display: inline-block;
+  padding: 5px;
+}
+h2, h4 {
+  margin: 5px 0;
+}
+p {
+  padding: 5px;
+}
+/* ---------- Plateau ---------- */
+/* #board {
   display: grid;
   grid-template-columns: repeat(var(--cols, 5), var(--cell, 48px));
   grid-template-rows:    repeat(var(--rows, 5), var(--cell, 48px));
   gap: 0;
   position: relative;
-  background: none;                 /* PLUS de fond ici */
+  background: none;
   border: 3px solid #5c4033;
   box-shadow: 0 4px 16px rgba(0,0,0,.18);
   touch-action: manipulation;
   user-select: none;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+}*/
+
+/* === CONTENEUR GLOBAL === */
+#sokoban-game-outer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;   /* ou 80vh selon ta page */
+  gap: 1rem;
 }
 
-/* Toutes les couches passent en "display: contents"
-   pour que leurs ENFANTS soient placés directement dans le grid #board */
-#floors,
-#goals,
-#walls,
-#boxes {
+/* === LE PLATEAU : taille figée, pas de surprise === */
+#board {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--cell));
+  grid-template-rows: repeat(var(--rows), var(--cell));
+  
+  /* Taille explicite : calcule exactement rows × cols × cellule */
+  width: calc(var(--cols) * var(--cell));
+  height: calc(var(--rows) * var(--cell));
+  
+  /* Plus de fit-content, plus de margin auto buggé */
+  position: relative;
+}
+
+.container-grid {
+display: flex;
+justify-content: center;
+}
+
+/* === LES 4 CALQUES : transparents pour le grid === */
+/* Ils disparaissent du layout et leurs enfants (.floor, .wall, etc.) 
+   remontent comme grid-items DIRECTS du #board */
+#board > #floors,
+#board > #goals,
+#board > #walls,
+#board > #boxes {
   display: contents;
 }
 
-/* Tous les éléments de case : même taille, empilables */
-.floor,
-.goal,
-.wall,
-.box,
-#player {
+/* === Tous les éléments du jeu remplissent leur cellule === */
+#board > .floor,
+#board > .goal,
+#board > .wall,
+#board > .box,
+#board > #player {
   width: 100%;
   height: 100%;
-  position: relative;   /* indispensable pour que z-index fonctionne */
 }
 
-/* ========== CALQUES ========== */
+/* Le joueur spécifiquement */
+#board > #player {
+  object-fit: contain;
+  /* grid-row et grid-column sont gérés par ton JS */
+}
 
-/* 1. SOL (derrière tout) */
+
+/* 1. Sol */
 .floor {
   z-index: 1;
-  background-image: url('/public/projects/sokoban/assets/font.jpg'); 
-  background-size: cover;      /* ou 100% 100% selon ton image */
+  background-image: url('/public/projects/sokoban/assets/font.jpg');
+  background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
 }
 
-/* 2. CIBLE (par-dessus le sol, transparente au centre) */
+/* 2. Cible */
 .goal {
   z-index: 2;
-  /* Le fond coloré = couleur de la caisse attendue, visible à travers le PNG */
   background-color: var(--goal-bg, transparent);
   background-image: url('/public/projects/sokoban/assets/goal-shape.png');
   background-size: cover;
@@ -99,7 +127,7 @@
   background-position: center;
 }
 
-/* 3. MUR (par-dessus le sol) */
+/* 3. Mur */
 .wall {
   z-index: 5;
   background-image: url('/public/projects/sokoban/assets/mur.png');
@@ -108,14 +136,14 @@
   background-position: center;
 }
 
-/* 4. CAISSE */
+/* 4. Caisse */
 .box {
   z-index: 10;
   object-fit: contain;
   pointer-events: none;
 }
 
-/* 5. JOUEUR (au-dessus de tout) */
+/* 5. Joueur */
 #player {
   z-index: 20;
   object-fit: contain;
@@ -123,57 +151,117 @@
   display: block;
 }
 
-/* === Boutons desktop === */
+/* ---------- Boutons desktop ---------- */
 .controls {
   display: flex;
-  gap: .6rem;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
 }
-.controls button {
-  padding: .5rem 1rem;
+
+/* Style de base TOUS les boutons du jeu */
+.controls button {                       /* si tu gardes un lien/bouton retour dans la zone jeu */
+  padding: 0.6rem 1.25rem;
   border: none;
-  border-radius: 6px;
-  background: #2c2c2c;
-  color: #fff;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: .95rem;
+  transition: all .15s ease;
+  box-shadow: 0 2px 0 rgba(0,0,0,.15);
 }
-.controls button:disabled {
-  opacity: .45;
-  cursor: not-allowed;
+
+/* Couleurs par bouton */
+#undo, #reset {
+  background: #4a5568;
+  color: #fff;
 }
+#undo:hover, #reset:hover {
+  background: #2d3748;
+  transform: translateY(-1px);
+}
+
+/* Suivant : vert */
 #next {
   background: #2e7d32;
+  color: #fff;
+  box-shadow: 0 2px 0 #1b5e20;
+}
+#next:hover {
+  background: #1b5e20;
+  transform: translateY(-1px);
 }
 
-/* === Message victoire === */
-#msg {
-  position: fixed;          /* ou absolute si tu veux qu'il reste dans le wrapper */
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1000;
+/* Active (clic) */
+.controls button:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
 
-  background: rgba(0, 0, 0, 0.85);
+/* État désactivé */
+.controls button:disabled,
+#next[hidden] + /* pas utile, hidden retire du flux */ 
+.controls button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ---------- Message victoire ---------- */
+#msg {
+  display: none;                /* caché par défaut */
+  margin: 0 auto 1rem;
+  padding: 1rem 1.5rem;
+  background: #2e7d32;          /* vert succès */
   color: #fff;
-  padding: 2rem 3rem;
-  border-radius: 1rem;
-  font-size: 1.8rem;
-  font-weight: bold;
+  border-radius: 10px;
+  font-weight: 700;
   text-align: center;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px); /* optionnel, joli effet */
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+  animation: slideDown .25s ease-out;
+  max-width: 100%;
 }
 
 #msg:not([hidden]) {
-  display: block;
+  display: flex;                /* flex pour aligner texte + bouton */
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+#msg p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Petit bouton OK intégré au bandeau */
+.msg-close {
+  background: rgba(255,255,255,.2);
+  border: 2px solid #fff;
+  color: #fff;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background .15s;
+}
+.msg-close:hover {
+  background: rgba(255,255,255,.35);
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-10px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
 
-
+/* ---------- Boutons tactiles ---------- */
 .touch-controls {
-  display: flex;              
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: .25rem;
@@ -192,5 +280,49 @@
   background: #444;
   color: #fff;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent; /* ← plus de flash bleu sur mobile */
 }
 
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .sokoban-game-outer {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+  }
+
+  #msg {
+    width: 90vw;
+    padding: 1.5rem;
+    font-size: 1.3rem;
+    box-sizing: border-box;
+  }
+
+  .level-info {
+    font-size: 1rem;
+  }
+
+  .controls {
+    gap: 0.4rem;
+  }
+  .controls button {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .touch-controls button {
+    width: 52px;
+    height: 52px;
+    font-size: 1.2rem;
+  }
+}
+@media (max-width: 480px) {
+  .controls {
+    gap: 0.5rem;
+  }
+  .controls button {
+    padding: 0.55rem 1rem;
+    font-size: 0.85rem;
+    flex: 1 1 auto;            /* boutons qui prennent la largeur sur mobile */
+    min-width: 100px;
+  }
+}

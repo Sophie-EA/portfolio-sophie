@@ -16,67 +16,67 @@
       name: "Nv2",
       map: ["  # @", " v   ", " # # ", " V   ", "    #"],
     },
-    {
-      id: "L3",
-      name: "Nv3",
-      map: ["     ", " J # ", " #   ", " j  @", "    #"],
-    },
-    {
-      id: "L4",
-      name: "Nv4",
-      map: ["     ", " B  #", "  #  ", "@    ", "   #b"],
-    },
-    {
-      id: "L5",
-      name: "Nv5",
-      map: ["j#  p", "     ", " #   ", " JP #", " #@  "],
-    },
-    {
-      id: "L6",
-      name: "Nv6",
-      map: ["   #v", " B # ", "## # ", "  V  ", " @ b "],
-    },
-    {
-      id: "L7",
-      name: "Nv7",
-      map: [
-        "   #   ",
-        "   #B  ",
-        "   p   ",
-        "  ###  ",
-        "   b   ",
-        "  P#   ",
-        " @ #   ",
-      ],
-    },
-    {
-      id: "L8",
-      name: "Nv8",
-      map: [
-        "#   #",
-        "# J  ",
-        " p#  ",
-        " @j  ",
-        " ##  ",
-        " P   ",
-        "  #  ",
-        "#   #",
-      ],
-    },
-    {
-      id: "L9",
-      name: "Nv9",
-      map: [
-        "##########",
-        "#   #    #",
-        "# @P#p#J #",
-        "#   j #  #",
-        "# vb# #  #",
-        "#   V B  #",
-        "#        #",
-        "##########",
-      ],
-    },
+    // {
+    //   id: "L3",
+    //   name: "Nv3",
+    //   map: ["     ", " J # ", " #   ", " j  @", "    #"],
+    // },
+    // {
+    //   id: "L4",
+    //   name: "Nv4",
+    //   map: ["     ", " B  #", "  #  ", "@    ", "   #b"],
+    // },
+    // {
+    //   id: "L5",
+    //   name: "Nv5",
+    //   map: ["j#  p", "     ", " #   ", " JP #", " #@  "],
+    // },
+    // {
+    //   id: "L6",
+    //   name: "Nv6",
+    //   map: ["   #v", " B # ", "## # ", "  V  ", " @ b "],
+    // },
+    // {
+    //   id: "L7",
+    //   name: "Nv7",
+    //   map: [
+    //     "   #   ",
+    //     "   #B  ",
+    //     "   p   ",
+    //     "  ###  ",
+    //     "   b   ",
+    //     "  P#   ",
+    //     " @ #   ",
+    //   ],
+    // },
+    // {
+    //   id: "L8",
+    //   name: "Nv8",
+    //   map: [
+    //     "#   #",
+    //     "# J  ",
+    //     " p#  ",
+    //     " @j  ",
+    //     " ##  ",
+    //     " P   ",
+    //     "  #  ",
+    //     "#   #",
+    //   ],
+    // },
+    // {
+    //   id: "L9",
+    //   name: "Nv9",
+    //   map: [
+    //     "##########",
+    //     "#   #    #",
+    //     "# @P#p#J #",
+    //     "#   j #  #",
+    //     "# vb# #  #",
+    //     "#   V B  #",
+    //     "#        #",
+    //     "##########",
+    //   ],
+    // },
   ];
 
   function measureLevel(raw) {
@@ -285,7 +285,7 @@
   function fitBoardToScreen() {
     if (!board || !data) return;
     const { rows, cols } = data;
-    const wrapper = document.getElementById("sokoban-wrapper");
+    const wrapper = document.getElementById("sokoban-game-outer");
     const maxW = (wrapper?.clientWidth || window.innerWidth) - 32;
     const maxH = window.innerHeight - 280; // place pour header + boutons
     const cell = Math.max(
@@ -319,10 +319,10 @@
   }
 
     const goalColorMap = {
-    pink:   '#ff69b4',
-    blue:   '#2196f3',
-    yellow: '#ffd700',
-    green:  '#32cd32'
+    pink:   '#E58F8F',
+    blue:   '#A7D6F9',
+    yellow: '#FFE780',
+    green:  '#91BC44'
   };
 
   function drawFloors() {
@@ -357,8 +357,7 @@
     if (backBtn) backBtn.disabled = true;
     if (nextBtn) nextBtn.hidden = true;
     if (msgEl) {
-      msgEl.hidden = true;
-      msgEl.classList.remove("overlay");
+      msgEl.setAttribute('hidden', '');
       msgEl.textContent = "";
     }
     locked = false;
@@ -521,11 +520,22 @@
     // === VICTOIRE ===
     if (msgEl) {
       msgEl.textContent = 'Niveau réussi ! 🎉';
-      msgEl.hidden = false;
+      msgEl.removeAttribute('hidden');
     }
-    if (nextBtn) nextBtn.hidden = false;
-    locked = true;   // bloque les mouvements, déjà géré par tryMove
+    if (nextBtn) {
+      if (currentLevelIndex < levels.length - 1) {
+        nextBtn.hidden = false;  // montre "Suivant" si ce n'est pas le dernier
+      } 
+      else {
+        nextBtn.hidden = true;   // cache "Suivant" sur le dernier niveau
+        // et tu peux ajouter dans le msg :
+        msgEl.textContent = "🎉 Niveau final réussi ! Clique sur Recommencer pour rejouer.";
+        setTimeout(() => {
+          loadLevel(0);
+        }, 2000);
+      }
     return true;
+    }
   }
 
   // ==========================================
@@ -564,7 +574,7 @@
     }
 
     if (!history.length && backBtn) backBtn.disabled = true;
-    if (nextBtn) nextBtn.hidden = true;
+    if (nextBtn) nextBtn.hidden = false;
     if (msgEl) {
       msgEl.hidden = true;
       msgEl.classList.remove("overlay");
@@ -578,7 +588,10 @@
   function nextLevel() {
     const next = currentLevelIndex + 1;
     if (next < levels.length) loadLevel(next);
-    else alert("Bravo ! Tous les niveaux sont terminés.");
+    else {
+      alert("Bravo ! Tous les niveaux sont terminés.");
+      currentLevelIndex = "";
+    }
   }
 
   function reinitGame() {
@@ -632,7 +645,7 @@
     reinit = document.getElementById("reinit");
     nextBtn = document.getElementById("next");
     msgEl = document.getElementById("msg");
-
+    nextBtn.hidden = true; 
     initGame();
 
     if (backBtn) backBtn.addEventListener("click", undo);
