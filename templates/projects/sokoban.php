@@ -94,8 +94,8 @@
                                       <button type="button" class="msg-close">OK</button>
                                     </div>
                                     <div class="level-info">
-                                        <span id="current-level-name">Nv1</span>
-                                        <span id="level-counter">Niveau 1 / 9</span>
+                                        <span id="current-level-name">Nv 1</span>
+                                        <span id="level-counter">/ 9</span>
                                     </div>
                                 </div>
 
