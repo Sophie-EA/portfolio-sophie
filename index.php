@@ -1,7 +1,4 @@
 <?php declare(strict_types=1);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 // 1. Connexion BDD et Template
 require_once __DIR__ . '/config/db.php';
@@ -62,14 +59,16 @@ $template->section('content');
         <?php else: ?>
             <?php foreach ($projects as $project): ?>
             <article class="card">
-            <img src="/public/images/projects/<?= htmlspecialchars($project['image']) ?>" 
-                 alt="<?= htmlspecialchars($project['title']) ?>" />
+                <div class="card-image">
+                    <img src="/public/images/projects/<?= htmlspecialchars($project['image']) ?>"
+                    alt="<?= htmlspecialchars($project['title']) ?>" />
+                </div>
             <h3><?= htmlspecialchars($project['title']) ?></h3>
-            <p><?= htmlspecialchars($project['description']) ?></p>
+            <p class="card-content"><?= htmlspecialchars($project['short_description']) ?></p>
             <?php if (!empty($project['slug'])): ?>
-                <a href="/projet.php?slug=<?= $project['slug'] ?>" class="btn">
+                <a href="/projet.php?slug=<?= $project['slug'] ?>" class="card-link">
             <?php else: ?>
-                <a href="/projet.php?id=<?= $project['id'] ?>" class="btn">
+                <a href="/projet.php?id=<?= $project['id'] ?>" class="card-link">
             <?php endif; ?>
             Voir le projet</a>
             </article>

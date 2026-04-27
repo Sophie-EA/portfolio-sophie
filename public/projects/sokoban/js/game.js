@@ -1,19 +1,41 @@
-// /public/projects/sokoban/js/game.js
-
-(function() {
-  'use strict';
+(function () {
+  "use strict";
 
   // ==========================================
-  // DONNÉES ET VARIABLES GLOBALES (internes au module)
+  // 1. NIVEAUX
   // ==========================================
-  
+
   const levels = [
-    { id: "L1", name: "Nv1", map: ["     ", "  b  ", "  $B ", "  @  ", "     "] },
-    { id: "L2", name: "Nv2", map: ["  # @", " v   ", " # # ", " V   ", "    #"] },
-    { id: "L3", name: "Nv3", map: ["     ", " J # ", " #   ", " j  @", "    #"] },
-    { id: "L4", name: "Nv4", map: ["     ", " B  #", "  #  ", "@    ", "   #b"] },
-    { id: "L5", name: "Nv5", map: ["j#  p", "     ", " #   ", " JP #", " #@  "] },
-    { id: "L6", name: "Nv6", map: ["   #v", " B # ", "## # ", "  V  ", " @ b "] },
+    {
+      id: "L1",
+      name: "Nv1",
+      map: ["     ", "  p  ", "  P  ", "  @  ", "     "],
+    },
+    {
+      id: "L2",
+      name: "Nv2",
+      map: ["  # @", " v   ", " # # ", " V   ", "    #"],
+    },
+    {
+      id: "L3",
+      name: "Nv3",
+      map: ["     ", " J # ", " #   ", " j  @", "    #"],
+    },
+    {
+      id: "L4",
+      name: "Nv4",
+      map: ["     ", " B  #", "  #  ", "@    ", "   #b"],
+    },
+    {
+      id: "L5",
+      name: "Nv5",
+      map: ["j#  p", "     ", " #   ", " JP #", " #@  "],
+    },
+    {
+      id: "L6",
+      name: "Nv6",
+      map: ["   #v", " B # ", "## # ", "  V  ", " @ b "],
+    },
     {
       id: "L7",
       name: "Nv7",
@@ -57,39 +79,21 @@
     },
   ];
 
-  //------identifie le nombre de lignes et colonnes---------------------------
   function measureLevel(raw) {
     const rows = raw.length;
     const cols = raw.reduce((m, line) => Math.max(m, line.length), 0);
     return { rows, cols };
   }
 
-  //------------ Map des caisses (images DOM) --------------------------------
-  const boxEls = new Map();
-  
-  // --- Utils clés -----------------------------------------------------------
-  function key(x, y) {
-    return `${x},${y}`;
-  }
-  function unkey(k) {
-    return k.split(",").map(Number);
-  }
-  function sortByYX(keys) {
-    return [...keys].sort((a, b) => {
-      const [ax, ay] = unkey(a),
-        [bx, by] = unkey(b);
-      return ay - by || ax - bx;
-    });
-  }
+  // ==========================================
+  // 2. ÉTAT & UTILITAIRES
+  // ==========================================
 
-  // --- Identité & cibles ----------------------------------------------------
-  const order = ["pink", "blue", "yellow", "green"]; // ordre canonique
-  const boxAt = new Map(); // posKey -> name
-  const boxElements = new Map();
-  const targetForName = new Map(); // name   -> posKey
-  const goalDivAt = new Map(); // posKey -> HTMLElement
+  const boxEls = new Map(); // couleur -> <img>
+  const boxAt = new Map(); // "x,y" -> couleur
+  const targetForName = new Map(); // couleur -> "x,y" (cible d'origine, optionnel)
+  const goalDivAt = new Map(); // "x,y" -> <div class="goal">
 
-  // --- Helpers DOM ----------------------------------------------------------
   let board = null;
   let goalsEl = null;
   let wallsLayer = null;
@@ -100,227 +104,37 @@
   let msgEl = null;
   let locked = false;
 
-  // Historique LIFO des actions effectuées
+  let currentLevelIndex = 0;
+  let data = null; // résultat de parseLevel
+  let px = 0,
+    py = 0;
+  let currentDir = "down";
   const history = [];
 
-  // Sprites joueur
+  const order = ["pink", "blue", "yellow", "green"];
+
+  function key(x, y) {
+    return `${x},${y}`;
+  }
+  function unkey(k) {
+    return k.split(",").map(Number);
+  }
+
+  function clamp(v, min, max) {
+    return Math.min(max, Math.max(min, v));
+  }
+
   const sprites = {
-    up: "./img/haut.png",
-    down: "./img/bas.png",
-    left: "./img/gauche.png",
-    right: "./img/droite.png",
+    up: "/public/projects/sokoban/assets/haut.png",
+    down: "/public/projects/sokoban/assets/bas.png",
+    left: "/public/projects/sokoban/assets/gauche.png",
+    right: "/public/projects/sokoban/assets/droite.png",
   };
+
   function setPlayerDir(dir) {
-    if (playerEl) playerEl.src = sprites[dir];
+    if (playerEl && sprites[dir]) playerEl.src = sprites[dir];
   }
 
-  // --------------------------- State global ---------------------------------
-  let currentLevelIndex = 0; // L1 = 0, L2 = 1, ...
-  let data; // état du niveau courant (parseLevel)
-  let px = 0, py = 0; // position joueur (cache locale)
-  let currentDir = "right";
-
-  // --- Parsing niveau -------------------------------------------------------
-  function parseLevel(raw) {
-    // Protection si raw est undefined ou vide
-    if (!raw || !Array.isArray(raw) || raw.length === 0) {
-      console.error("Niveau vide ou invalide");
-      return {
-        rows: 0,
-        cols: 0,
-        terrain: [],
-        walls: new Set(),
-        boxes: new Set(),
-        goals: [],
-        player: null,
-      };
-    }
-
-    const rows = raw.length;
-    const cols = Math.max(...raw.map((line) => line?.length || 0));
-
-    const FLOOR = 0,
-      WALL = 1,
-      GOAL = 2;
-    const terrain = Array.from({ length: rows }, () => Array(cols).fill(FLOOR));
-    const walls = new Set();
-    const boxes = new Set(); // Set de "x,y,color" ou "x,y"
-    const goals = []; // {x, y, color?}
-    let player = null;
-
-    for (let y = 0; y < rows; y++) {
-      const line = raw[y] || "";
-      for (let x = 0; x < line.length; x++) {
-        const ch = line[x];
-
-        // Si espace ou undefined, c'est du sol
-        if (!ch || ch === " ") continue;
-
-        switch (ch) {
-          case "#":
-            terrain[y][x] = WALL;
-            walls.add(key(x, y));
-            break;
-
-          case "@":
-            player = { x, y };
-            break;
-
-          case "$":
-            terrain[y][x] = FLOOR;
-            boxes.add(`${x},${y}`); // Caisse sans couleur (auto)
-            break;
-
-          // CAISSES COLORÉES (majuscules)
-          case "P":
-            terrain[y][x] = FLOOR;
-            boxes.add(`${x},${y},pink`);
-            break;
-          case "B":
-            terrain[y][x] = FLOOR;
-            boxes.add(`${x},${y},blue`);
-            break;
-          case "J":
-            terrain[y][x] = FLOOR;
-            boxes.add(`${x},${y},yellow`);
-            break;
-          case "V":
-          case "G": // alternative pour green si tu préfères
-            terrain[y][x] = FLOOR;
-            boxes.add(`${x},${y},green`);
-            break;
-
-          // CIBLES (minuscules)
-          case "o":
-            terrain[y][x] = GOAL;
-            goals.push({ x, y, color: null }); // Cible auto
-            break;
-          case "p":
-            terrain[y][x] = GOAL;
-            goals.push({ x, y, color: "pink" });
-            break;
-          case "b":
-            terrain[y][x] = GOAL;
-            goals.push({ x, y, color: "blue" });
-            break;
-          case "j":
-            terrain[y][x] = GOAL;
-            goals.push({ x, y, color: "yellow" });
-            break;
-          case "v":
-            terrain[y][x] = GOAL;
-            goals.push({ x, y, color: "green" });
-            break;
-
-          default:
-            // Caractère inconnu = sol
-            break;
-        }
-      }
-    }
-
-    // Vérification cruciale
-    if (!player) {
-      console.warn("Pas de joueur (@) trouvé dans le niveau !");
-    }
-
-    return {
-      rows,
-      cols,
-      terrain,
-      walls,
-      boxes, // Contient les strings avec ou sans couleur
-      goals,
-      player,
-    };
-  }
-
-  // --- Appariement caisses ↔ goals -----------------------------------------
-  function setupBijectionBoxesGoals() {
-    // Reset
-    boxAt.clear();
-    targetForName.clear();
-
-    // Remplit boxAt : position → couleur
-    for (const boxStr of data.boxes) {
-      const parts = boxStr.split(",");
-      const x = parseInt(parts[0]);
-      const y = parseInt(parts[1]);
-      const color = parts[2] || "auto"; // pink, blue, yellow, green ou auto
-
-      boxAt.set(key(x, y), color);
-    }
-
-    // Pour checkWin : couleur → position cible (prend la 1ère dispo si plusieurs)
-    const usedGoals = new Set();
-    for (const goal of data.goals) {
-      const k = key(goal.x, goal.y);
-      if (goal.color && !usedGoals.has(goal.color)) {
-        targetForName.set(goal.color, k);
-        usedGoals.add(goal.color);
-      } else if (!goal.color && !usedGoals.has("auto")) {
-        targetForName.set("auto", k);
-        usedGoals.add("auto");
-      }
-    }
-  }
-
-  // --- Dessin des cibles (colorées par data-*) ------------------------------
-  function drawGoals() {
-    if (!goalsEl) return;
-    goalsEl.innerHTML = "";
-    goalDivAt.clear();
-
-    for (const { x, y } of data.goals) {
-      const pos = key(x, y);
-      const div = document.createElement("div");
-      div.className = "goal";
-      div.style.gridColumnStart = x + 1;
-      div.style.gridRowStart = y + 1;
-
-      const entry = [...targetForName.entries()].find(([, g]) => g === pos);
-      if (entry) div.dataset.goal = entry[0];
-
-      goalsEl.appendChild(div);
-      goalDivAt.set(pos, div);
-    }
-    updateGoalColors();
-  }
-
-  // --- MAJ couleurs (occupant bon/mauvais) ---------------------------------
-  function updateGoalColors() {
-    for (const [posKey, div] of goalDivAt) {
-      const occ = boxAt.get(posKey) || "";
-      if (occ) div.dataset.occupant = occ;
-      else div.removeAttribute("data-occupant");
-    }
-  }
-
-  // ==================== DIMENSIONNEMENT ====================
-
-  function fitBoardToScreen() {
-    if (!data || !data.rows || !data.cols) return;
-
-    const margin = 60; // marge pour les boutons en bas
-
-    // Espace disponible
-    const availableHeight = window.innerHeight - margin;
-    const availableWidth = window.innerWidth - 40; // marge latérale
-
-    // Taille max par cellule
-    const cellByHeight = Math.floor(availableHeight / data.rows);
-    const cellByWidth = Math.floor(availableWidth / data.cols);
-
-    // Prendre le plus petit pour que ça rentre, limité entre 30px et 100px
-    const cellSize = Math.max(30, Math.min(cellByHeight, cellByWidth, 100));
-
-    board.style.setProperty("--cell", cellSize + "px");
-
-    // Recentrer le board si besoin
-    board.style.margin = "20px auto";
-  }
-
-  // --- Placement d'une pièce sur la grille (1..COLS / 1..ROWS) -------------
   function place(el, col, row, { visible } = {}) {
     if (!el) return;
     el.style.gridColumnStart = col;
@@ -329,273 +143,427 @@
       el.style.visibility = visible ? "visible" : "hidden";
   }
 
-  //------Placement des murs --------------------------------------------------
+  // ==========================================
+  // 3. CAISSES DOM (créées une seule fois)
+  // ==========================================
+
+  function initGame() {
+    const boxesLayer = document.getElementById("boxes");
+    if (!boxesLayer) {
+      console.error("Sokoban: #boxes introuvable !");
+      return;
+    }
+    boxesLayer.innerHTML = "";
+
+    const assets = {
+      pink: "box-pink.svg",
+      yellow: "box-yellow.svg",
+      green: "box-green.svg",
+      blue: "box-pink.svg", // en attendant la bleu
+    };
+
+    for (const [color, filename] of Object.entries(assets)) {
+      const img = document.createElement("img");
+      img.id = color;
+      img.className = "piece box";
+      img.alt = `caisse ${color}`;
+      img.src = `/public/projects/sokoban/assets/${filename}`;
+      img.style.visibility = "hidden";
+      // Teinte manuelle si tu n'as pas d'image bleue propre
+      if (color === "blue" && filename === "box-pink.svg") {
+        img.style.filter = "hue-rotate(210deg) saturate(1.4) brightness(0.95)";
+      }
+      boxesLayer.appendChild(img);
+      boxEls.set(color, img);
+    }
+  }
+
+  // ==========================================
+  // 4. PARSING DU NIVEAU
+  // ==========================================
+
+  function parseLevel(raw) {
+    const rows = raw.length;
+    const cols = raw.reduce((m, line) => Math.max(m, line.length), 0);
+    const FLOOR = 0, WALL = 1;
+    const terrain = Array.from({ length: rows }, () => Array(cols).fill(FLOOR));
+
+    const walls = new Set();
+    const boxes = new Set();
+    const goals = [];
+    let player = null;
+
+    for (let y = 0; y < rows; y++) {
+      const line = raw[y] || "";
+      for (let x = 0; x < line.length; x++) {
+        const ch = line[x];
+        if (!ch || ch === " ") continue;
+
+        switch (ch) {
+          case "#":
+            walls.add(key(x, y));
+            break;
+          case "@":
+            player = { x, y };
+            break;
+          case "$": // caisse sans couleur → fallback rose
+            boxes.add(`${x},${y},pink`);
+            break;
+          case "P":
+            boxes.add(`${x},${y},pink`);
+            break;
+          case "B":
+            boxes.add(`${x},${y},blue`);
+            break;
+          case "J":
+            boxes.add(`${x},${y},yellow`);
+            break;
+          case "V":
+          case "G":
+            boxes.add(`${x},${y},green`);
+            break;
+          case "o":
+            goals.push({ x, y, color: null });
+            break;
+          case "p":
+            goals.push({ x, y, color: "pink" });
+            break;
+          case "b":
+            goals.push({ x, y, color: "blue" });
+            break;
+          case "j":
+            goals.push({ x, y, color: "yellow" });
+            break;
+          case "v":
+            goals.push({ x, y, color: "green" });
+            break;
+          default:
+            break; // sol
+        }
+      }
+    }
+
+    return { rows, cols, walls, boxes, goals, player };
+  }
+
+  // ==========================================
+  // 5. RENDU
+  // ==========================================
+
+  function drawGoals() {
+    if (!goalsEl) return;
+    goalsEl.innerHTML = "";
+    goalDivAt.clear();
+
+    for (const g of data.goals) {
+      const div = document.createElement("div");
+      div.className = "goal";
+      div.style.gridColumnStart = g.x + 1;
+      div.style.gridRowStart = g.y + 1;
+      if (g.color) {
+        div.dataset.color = g.color;
+        div.style.setProperty('--goal-bg', goalColorMap[g.color] || g.color);
+      }
+      goalsEl.appendChild(div);
+      goalDivAt.set(key(g.x, g.y), div);
+    }
+  }
+
   function drawWalls() {
     if (!wallsLayer) return;
     wallsLayer.innerHTML = "";
-    for (const k of data.walls) {
-      const [x, y] = unkey(k);
-      const img = document.createElement("img");
-      img.src = "./img/mur.png";
-      img.alt = "mur";
-      img.className = "piece wall";
-      wallsLayer.appendChild(img);
-      place(img, x + 1, y + 1, { visible: true });
+    for (const w of data.walls) {
+      const [x, y] = unkey(w);
+      const div = document.createElement("div");
+      div.className = "wall piece";
+      div.style.gridColumnStart = x + 1;
+      div.style.gridRowStart = y + 1;
+      wallsLayer.appendChild(div);
     }
   }
 
-  // --------------------------- Utilitaires ----------------------------------
-  function clamp(v, min, max) {
-    return Math.min(max, Math.max(min, v));
-  }
-  function isBoxOnGoal(x, y) {
-    return data.terrain[y][x] === 2; // GOAL = 2
-  }
-
-  // Test de victoire: chaque caisse sur "sa" cible
-  function checkWin() {
-    // Vérifie que chaque couleur assignée est sur sa cible
-    for (const [color, targetPos] of targetForName) {
-      // Quelle couleur est sur cette cible ?
-      let colorOnTarget = null;
-      for (const [pos, col] of boxAt) {
-        if (pos === targetPos) {
-          colorOnTarget = col;
-          break;
-        }
-      }
-
-      if (colorOnTarget !== color) {
-        return; // Pas encore gagné
-      }
-    }
-
-    // Victoire !
-    locked = true;
-    if (nextBtn) nextBtn.hidden = false;
-    if (msgEl) {
-      msgEl.textContent = "🎉 Niveau réussi !";
-      msgEl.hidden = false;
-      msgEl.classList.add("overlay");
-    }
+  function fitBoardToScreen() {
+    if (!board || !data) return;
+    const { rows, cols } = data;
+    const wrapper = document.getElementById("sokoban-wrapper");
+    const maxW = (wrapper?.clientWidth || window.innerWidth) - 32;
+    const maxH = window.innerHeight - 280; // place pour header + boutons
+    const cell = Math.max(
+      28,
+      Math.min(72, Math.floor(Math.min(maxW / cols, maxH / rows))),
+    );
+    board.style.setProperty("--cell", cell + "px");
+    board.style.setProperty("--cols", cols);
+    board.style.setProperty("--rows", rows);
   }
 
-  // --- Affichage des caisses -----------------------------------
   function drawBoxes() {
-    // 1. Cacher toutes les caisses d'abord
-    ["pink", "yellow", "blue", "green"].forEach((color) => {
-      const el = document.getElementById(color);
-      if (el) place(el, 1, 1, { visible: false });
-    });
+    // Cacher toutes les caisses par défaut
+    for (const [, el] of boxEls) el.style.visibility = "hidden";
 
-    // 2. Placer les caisses actives selon boxAt
-    for (const [posKey, color] of boxAt) {
-      const [x, y] = posKey.split(",").map(Number);
-      const el = document.getElementById(color);
-      if (el) {
-        place(el, x + 1, y + 1, { visible: true });
+    // Afficher celles présentes sur la grille
+    for (const [k, color] of boxAt) {
+      const el = boxEls.get(color);
+      if (!el) continue;
+      const [x, y] = unkey(k);
+      place(el, x + 1, y + 1, { visible: true });
+    }
+  }
+
+  function updateGoalColors() {
+    for (const [k, div] of goalDivAt) {
+      const occupant = boxAt.get(k) || null;
+      if (occupant) div.dataset.occupant = occupant;
+      else delete div.dataset.occupant;
+    }
+  }
+
+    const goalColorMap = {
+    pink:   '#ff69b4',
+    blue:   '#2196f3',
+    yellow: '#ffd700',
+    green:  '#32cd32'
+  };
+
+  function drawFloors() {
+    const floorsEl = document.getElementById("floors");
+    if (!floorsEl || !data) return;
+    floorsEl.innerHTML = "";
+    for (let y = 0; y < data.rows; y++) {
+      for (let x = 0; x < data.cols; x++) {
+        const div = document.createElement("div");
+        div.className = "floor";
+        div.style.gridColumnStart = x + 1;
+        div.style.gridRowStart    = y + 1;
+        floorsEl.appendChild(div);
       }
     }
   }
 
-  // --------------------------- Chargement niveau ----------------------------
-  function loadLevel(index) {
-    currentLevelIndex = index;
-    const raw = levels[index]?.map;
-    
-    if (!raw) {
-      console.error("Niveau inconnu:", index);
-      return;
-    }
-    
-    const parsed = parseLevel(raw);
-    data = parsed; // <- IMPORTANT: data devient l'état courant
 
-    // Vérification
-    if (!data.player) {
-      console.error("Pas de position joueur (@) dans ce niveau");
-      return;
-    }
+  // ==========================================
+  // 6. CHARGEMENT & UI
+  // ==========================================
 
-    // Dimensionner la grille
-    board.style.setProperty("--cols", parsed.cols);
-    board.style.setProperty("--rows", parsed.rows);
+  function loadLevel(idx) {
+    if (idx < 0 || idx >= levels.length) return;
+    currentLevelIndex = idx;
 
-    // Reset UI
+    const raw = levels[idx].map;
+    data = parseLevel(raw);
+
+    // Reset état
     history.length = 0;
     if (backBtn) backBtn.disabled = true;
-    locked = false;
     if (nextBtn) nextBtn.hidden = true;
     if (msgEl) {
       msgEl.hidden = true;
       msgEl.classList.remove("overlay");
       msgEl.textContent = "";
     }
+    locked = false;
 
-    // Bijection caisses ↔ goals (couleurs)
-    setupBijectionBoxesGoals();
-
-    // Couches statiques
+    // Sol & Murs
+    drawFloors();
     drawWalls();
-    drawGoals();
 
     // Joueur
-    setPlayerDir("right");
-    currentDir = "right";
-    px = data.player.x;
-    py = data.player.y;
-    place(playerEl, px + 1, py + 1, { visible: true });
+    px = data.player?.x ?? 0;
+    py = data.player?.y ?? 0;
+    currentDir = "down";
+    if (playerEl) {
+      setPlayerDir("down");
+      place(playerEl, px + 1, py + 1, { visible: true });
+    }
 
-    // Caisses + couleurs
+    // Cibles & caisses
+    boxAt.clear();
+    for (const b of data.boxes) {
+      const [sx, sy, color] = b.split(",");
+      boxAt.set(key(parseInt(sx), parseInt(sy)), color);
+    }
+    drawGoals();
     drawBoxes();
     updateGoalColors();
-    
-    // Affichage du niveau
-    const levelNumEl = document.getElementById("current-level-num");
-    const levelNameEl = document.getElementById("current-level-name");
-    if (levelNumEl) levelNumEl.textContent = index + 1;
-    if (levelNameEl) levelNameEl.textContent = levels[index].name;
-    
     fitBoardToScreen();
+
+    // UI
+    const numEl = document.getElementById("current-level-num");
+    const nameEl = document.getElementById("current-level-name");
+    if (numEl) numEl.textContent = idx + 1;
+    if (nameEl) nameEl.textContent = levels[idx].name;
+
+    console.log(
+      `Sokoban: niveau "${levels[idx].name}" chargé (${data.cols}x${data.rows})`,
+    );
   }
 
-  // --------------------------- Déplacements ---------------------------------
-  function handleKey(e) {
-    if (locked) return;
-    const move = {
-      ArrowLeft: [-1, 0],
-      ArrowRight: [1, 0],
-      ArrowUp: [0, -1],
-      ArrowDown: [0, 1],
-    }[e.key];
-    if (!move) return;
-    e.preventDefault();
-    tryMove(move[0], move[1]);
-  }
-
-  function dirFromDelta(dx, dy) {
-    if (dx === 1) return "right";
-    if (dx === -1) return "left";
-    if (dy === 1) return "down";
-    return "up";
-  }
-
-  function getDirName(dx, dy) {
-    if (dx === 1) return "right";
-    if (dx === -1) return "left";
-    if (dy === 1) return "down";
-    if (dy === -1) return "up";
-    return currentDir; // fallback
-  }
+  // ==========================================
+  // 7. DÉPLACEMENTS & HISTORIQUE
+  // ==========================================
 
   function tryMove(dx, dy) {
+    if (locked) return;
+
+    const oldDir = currentDir;
+    if (dx === 0 && dy === -1) currentDir = "up";
+    if (dx === 0 && dy === 1) currentDir = "down";
+    if (dx === -1 && dy === 0) currentDir = "left";
+    if (dx === 1 && dy === 0) currentDir = "right";
+    setPlayerDir(currentDir);
+
     const nx = px + dx;
     const ny = py + dy;
-    const k = key(nx, ny);
 
-    // CORRECTION : utiliser data.cols et data.rows, pas data.width/height
-    const W = data.cols || 20;
-    const H = data.rows || 20;
-    
-    if (nx < 0 || nx >= W || ny < 0 || ny >= H) return;
+    // Hors limites
+    if (nx < 0 || nx >= data.cols || ny < 0 || ny >= data.rows) {
+      return false;
+    }
 
-    // Mur ?
-    if (data.walls.has(k)) return;
+    // Mur
+    if (data.walls.has(key(nx, ny))) {
+      return false;
+    }
 
-    // Caisse ?
-    if (boxAt.has(k)) {
-      const color = boxAt.get(k);
-      const nextX = nx + dx;
-      const nextY = ny + dy;
-      const nextK = key(nextX, nextY);
-      
-      // Limites pour la caisse aussi (elle ne doit pas sortir)
-      if (nextX < 0 || nextX >= data.cols || nextY < 0 || nextY >= data.rows) return;
-      
-      // Collision mur/caisse derrière ?
-      if (data.walls.has(nextK) || boxAt.has(nextK)) return;
+    // Caisse devant
+    const kNext = key(nx, ny);
+    if (boxAt.has(kNext)) {
+      const ax = nx + dx;
+      const ay = ny + dy;
+      const kAfter = key(ax, ay);
 
-      // Vérifier si la caisse est sur SA cible finale (bloquée)
-      const targetPos = targetForName ? targetForName.get(color) : null;
-      if (targetPos && k === targetPos) return; // Bloquée sur sa cible
+      // Vérifier après la caisse
+      if (ax < 0 || ax >= data.cols || ay < 0 || ay >= data.rows) return false;
+      if (data.walls.has(kAfter)) return false;
+      if (boxAt.has(kAfter)) return false;
 
-      // Déplace la caisse (logique + visuel)
-      boxAt.delete(k);
-      boxAt.set(nextK, color);
+      const color = boxAt.get(kNext);
+      boxAt.delete(kNext);
+      boxAt.set(kAfter, color);
 
-      const el = document.getElementById(color);
-      if (el) place(el, nextX + 1, nextY + 1);
-
-      // Historique
       history.push({
         type: "push",
         pFrom: [px, py],
+        dirPrev: oldDir,
         bFrom: [nx, ny],
-        bTo: [nextX, nextY],
+        bTo: [ax, ay],
         name: color,
-        dirPrev: currentDir,
       });
-
-      updateGoalColors();
     } else {
-      // Simple déplacement
       history.push({
         type: "move",
         pFrom: [px, py],
-        dirPrev: currentDir,
+        dirPrev: oldDir,
       });
     }
 
-    // Déplace joueur
+    // Bouger joueur
     px = nx;
     py = ny;
     place(playerEl, px + 1, py + 1);
-    setPlayerDir(getDirName(dx, dy));
+
     if (backBtn) backBtn.disabled = false;
 
+    drawBoxes();
+    updateGoalColors();
     checkWin();
+    return true;
   }
 
-  // --------------------------- Undo -----------------------------------------
+  function handleKey(e) {
+    let dx = 0,
+      dy = 0;
+    switch (e.key) {
+      case "ArrowUp":
+      case "z":
+      case "Z":
+        dy = -1;
+        break;
+      case "ArrowDown":
+      case "s":
+      case "S":
+        dy = 1;
+        break;
+      case "ArrowLeft":
+      case "q":
+      case "Q":
+        dx = -1;
+        break;
+      case "ArrowRight":
+      case "d":
+      case "D":
+        dx = 1;
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+    tryMove(dx, dy);
+  }
+
+  // ==========================================
+  // 8. VICTOIRE
+  // ==========================================
+  function checkWin() {
+    if (!data || !data.goals.length) return false;
+
+    for (const g of data.goals) {
+      const k = key(g.x, g.y);
+      const occupant = boxAt.get(k);   // "pink", "blue", "yellow", "green"
+      const expected = g.color;        // null ou "pink", "blue"...
+
+      if (!occupant) return false;     // une cible encore vide
+
+      // Si la cible attend une couleur précise, la caisse doit correspondre
+      if (expected && occupant !== expected) return false;
+    }
+
+    // === VICTOIRE ===
+    if (msgEl) {
+      msgEl.textContent = 'Niveau réussi ! 🎉';
+      msgEl.hidden = false;
+    }
+    if (nextBtn) nextBtn.hidden = false;
+    locked = true;   // bloque les mouvements, déjà géré par tryMove
+    return true;
+  }
+
+  // ==========================================
+  // 9. UNDO / NAVIGATION / RESIZE
+  // ==========================================
+
   function undo() {
     if (locked) locked = false;
     if (!history.length) return;
 
     const step = history.pop();
-    switch (step.type) {
-      case "move": {
-        // CORRECTION : step.pFrom, pas step.from
-        px = step.pFrom[0];
-        py = step.pFrom[1];
-        setPlayerDir(step.dirPrev);
-        currentDir = step.dirPrev;
-        place(playerEl, px + 1, py + 1);
-        break;
-      }
-      case "push": {
-        const kFrom = key(step.bFrom[0], step.bFrom[1]);
-        const kTo = key(step.bTo[0], step.bTo[1]);
-        const color = step.name;
 
-        // Logique
-        boxAt.delete(kTo);
-        boxAt.set(kFrom, color);
+    if (step.type === "move") {
+      px = step.pFrom[0];
+      py = step.pFrom[1];
+      currentDir = step.dirPrev;
+      setPlayerDir(currentDir);
+      place(playerEl, px + 1, py + 1);
+    } else if (step.type === "push") {
+      const kFrom = key(step.bFrom[0], step.bFrom[1]);
+      const kTo = key(step.bTo[0], step.bTo[1]);
+      const color = step.name;
 
-        // Visuel : remettre le SVG à sa place
-        const el = document.getElementById(color);
-        place(el, step.bFrom[0] + 1, step.bFrom[1] + 1);
+      boxAt.delete(kTo);
+      boxAt.set(kFrom, color);
 
-        // Remet joueur
-        px = step.pFrom[0];
-        py = step.pFrom[1];
-        setPlayerDir(step.dirPrev);
-        place(playerEl, px + 1, py + 1);
+      const el = boxEls.get(color);
+      if (el)
+        place(el, step.bFrom[0] + 1, step.bFrom[1] + 1, { visible: true });
 
-        updateGoalColors();
-        break;
-      }
+      px = step.pFrom[0];
+      py = step.pFrom[1];
+      currentDir = step.dirPrev;
+      setPlayerDir(currentDir);
+      place(playerEl, px + 1, py + 1);
     }
 
+    if (!history.length && backBtn) backBtn.disabled = true;
     if (nextBtn) nextBtn.hidden = true;
     if (msgEl) {
       msgEl.hidden = true;
@@ -603,41 +571,60 @@
       msgEl.textContent = "";
     }
 
-    if (backBtn) backBtn.disabled = history.length === 0;
-    checkWin();
+    drawBoxes();
+    updateGoalColors();
   }
 
-  // --------------------------- Navigation -----------------------------------
   function nextLevel() {
     const next = currentLevelIndex + 1;
     if (next < levels.length) loadLevel(next);
     else alert("Bravo ! Tous les niveaux sont terminés.");
   }
-  
+
   function reinitGame() {
-    loadLevel(0);
+    loadLevel(currentLevelIndex);
     history.length = 0;
     if (backBtn) backBtn.disabled = true;
   }
 
   function handleResize() {
-    drawGoals();
     fitBoardToScreen();
   }
 
   // ==========================================
-  // INITIALISATION (ne s'exécute que si on est sur la bonne page)
+  // 10. MOBILE
   // ==========================================
-  
+
+  function bindDirectionButtons() {
+    const dirs = [
+      { id: "btn-up", dx: 0, dy: -1 },
+      { id: "btn-down", dx: 0, dy: 1 },
+      { id: "btn-left", dx: -1, dy: 0 },
+      { id: "btn-right", dx: 1, dy: 0 },
+    ];
+
+    dirs.forEach(({ id, dx, dy }) => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          tryMove(dx, dy);
+        });
+      }
+    });
+  }
+
+  // ==========================================
+  // 11. INITIALISATION
+  // ==========================================
+
   function init() {
-    // Vérification : est-on sur la page Sokoban ?
     board = document.getElementById("board");
     if (!board) {
-      console.log("Sokoban: #board non trouvé, initialisation annulée");
+      console.log("Sokoban: #board absent — initialisation annulée.");
       return;
     }
 
-    // Récupération des éléments DOM
     goalsEl = document.getElementById("goals");
     wallsLayer = document.getElementById("walls");
     playerEl = document.getElementById("player");
@@ -646,30 +633,24 @@
     nextBtn = document.getElementById("next");
     msgEl = document.getElementById("msg");
 
-    // Initialisation des références aux caisses
-    boxEls.set("pink", document.getElementById("pink"));
-    boxEls.set("blue", document.getElementById("blue"));
-    boxEls.set("yellow", document.getElementById("yellow"));
-    boxEls.set("green", document.getElementById("green"));
+    initGame();
 
-    // Event listeners (avec vérifications)
     if (backBtn) backBtn.addEventListener("click", undo);
-    if (nextBtn) nextBtn.addEventListener("click", nextLevel);
     if (reinit) reinit.addEventListener("click", reinitGame);
-    
+    if (nextBtn) nextBtn.addEventListener("click", nextLevel);
     document.addEventListener("keydown", handleKey);
     window.addEventListener("resize", handleResize);
 
-    // Démarrage
+    bindDirectionButtons();
+
     loadLevel(0);
     console.log("Sokoban initialisé avec succès");
   }
 
-  // Lancement conditionnel
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+  // Lancement
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
   } else {
     init();
   }
-
 })();

@@ -1,104 +1,109 @@
 <?php
-require_once 'config/db.php';
-require_once 'includes/Template.php';
+declare(strict_types=1);
 
-// Récupération du projet
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$slug = isset($_GET['slug']) ? $_GET['slug'] : '';
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/Template.php';
 
-if ($id) {
-    $stmt = $db->prepare("SELECT * FROM projects WHERE id = ?");
-    $stmt->execute([$id]);
-} elseif ($slug) {
+// ---------- 1. Récupération du projet ----------
+
+$slug = $_GET['slug'] ?? null;
+$id   = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
+if (!$slug && !$id) {
+    header('Location: /');
+    exit;
+}
+
+if ($slug) {
     $stmt = $db->prepare("SELECT * FROM projects WHERE slug = ?");
     $stmt->execute([$slug]);
 } else {
-    header('Location: /index.php');
-    exit;
+    $stmt = $db->prepare("SELECT * FROM projects WHERE id = ?");
+    $stmt->execute([$id]);
 }
 
-$project = $stmt->fetch();
+$project = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$project) {
-    header('Location: /index.php');
+    http_response_code(404);
+    echo "Projet non trouvé.";
     exit;
 }
 
+// ---------- 2. Routage vers le bon template ----------
+
+
+
+// ---------- 2. Images de la galerie ----------
+$stmtImages = $db->prepare("
+    SELECT image_path, alt_text 
+    FROM project_images 
+    WHERE project_id = ? 
+    ORDER BY display_order ASC
+");
+$stmtImages->execute([$project['id']]); 
+$galleryImages = $stmtImages->fetchAll(PDO::FETCH_ASSOC);
+
+// ---------- 3. Template Engine ----------
 $template = new Template(__DIR__ . '/templates/layout.php');
 
+// Title
 $template->section('title');
 echo htmlspecialchars($project['title']) . " - Portfolio";
 $template->endSection();
 
-// CSS spécifique si projet avec assets custom
+// CSS spécifique projet
 $template->section('extra_css');
-if ($project['has_custom_assets']) {
-    $project_path = "/public/projects/{$project['slug']}/css/game.css";
-    if (file_exists(__DIR__ . $project_path)) {
-        echo '<link rel="stylesheet" href="' . $project_path . '">';
+if (!empty($project['has_custom_assets']) && !empty($project['slug'])) {
+    $css_path = "/public/projects/{$project['slug']}/css/game.css";
+    if (file_exists(__DIR__ . $css_path)) {
+        echo '<link rel="stylesheet" href="' . $css_path . '">';
     }
 }
 $template->endSection();
 
+// ---------- 4. Contenu principal ----------
 $template->section('content');
 
-// Si projet standard (texte + image)
-if (!$project['has_custom_assets'] || $project['slug'] === null) {
-    ?>
-    <article class="projet-detail standard">
-        <h1><?= htmlspecialchars($project['title']) ?></h1>
-        
-        <img src="/public/images/<?= htmlspecialchars($project['image']) ?>" 
-             alt="<?= htmlspecialchars($project['title']) ?>" />
-        
-        <div class="description">
-            <?= nl2br(htmlspecialchars($project['description'])) ?>
-        </div>
-        
-        <div class="meta">
-            <p><strong>Technologies :</strong> <?= htmlspecialchars($project['technologies']) ?></p>
-            <div class="links">
-                <?php if (!empty($project['github_url'])): ?>
-                    <a href="<?= htmlspecialchars($project['github_url']) ?>" target="_blank" class="btn">GitHub</a>
-                <?php endif; ?>
-                <?php if (!empty($project['demo_url'])): ?>
-                    <a href="<?= htmlspecialchars($project['demo_url']) ?>" target="_blank" class="btn">Démo externe</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </article>
-    <?php
-} 
-// Si projet avec template custom (comme Sokoban)
-else {
-    // Inclusion dynamique du template spécifique
+$isCustom = !empty($project['has_custom_assets']) && !empty($project['slug']);
+
+if ($isCustom) {
+    // Template spécifique (Sokoban, etc.)
     $custom_template = __DIR__ . "/templates/projects/{$project['slug']}.php";
-    
     if (file_exists($custom_template)) {
-        // Extrait les variables pour le template inclus
-        extract(['project' => $project, 'db' => $db]);
         include $custom_template;
     } else {
-        // Fallback si template manquant
-        echo "<p>Template spécifique en cours de développement...</p>";
+        echo '<p>Template spécifique en cours de développement...</p>';
+        echo '<a href="/index.php#projects" class="btn-retour">← Retour aux projets</a>';
     }
+} else {
+    // Template standard (RebootTech, Portfolio...)
+    include __DIR__ . '/templates/projects/standard.php';
 }
-?>
 
-<a href="/index.php#projects" class="retour">← Retour aux projets</a>
+// Lightbox (nécessaire pour tous les projets qui ont une galerie ou des images cliquables)
+?>
+<div id="lightbox" class="lightbox">
+    <span class="lightbox-close">&times;</span>
+    <img class="lightbox-img" src="" alt="">
+    <div class="lightbox-caption"></div>
+</div>
 
 <?php
 $template->endSection();
 
-// JS spécifique en fin de page
+// ---------- 5. JS en fin de page ----------
 $template->section('extra_js');
-if ($project['has_custom_assets']) {
+if ($isCustom) {
     $js_path = "/public/projects/{$project['slug']}/js/game.js";
     if (file_exists(__DIR__ . $js_path)) {
         echo '<script src="' . $js_path . '"></script>';
     }
+} else {
+    // Lightbox + effets galerie pour les projets standards
+    echo '<script src="/public/js/galerie.js"></script>';
 }
 $template->endSection();
 
+// ---------- 6. Rendu ----------
 $template->render();
-?>

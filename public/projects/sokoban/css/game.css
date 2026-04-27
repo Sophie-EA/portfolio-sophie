@@ -1,173 +1,196 @@
-* {
-  margin: 0;
-  padding: 0;
-}
-:root {
-  --rows: 5;
-  --cols: 5;
-  --cell: 100px;
-}
+/* ==========================================
+   SOKOBAN — CSS complet
+   ========================================== */
 
-.board {
-  /* grille logique pour placer les pièces */
-  position: relative;
-  margin: 40px auto;
-    inline-size: calc(var(--cols) * var(--cell));
-  block-size:  calc(var(--rows) * var(--cell));
-  display: grid;
-  grid-template-columns: repeat(var(--cols), var(--cell));
-  grid-template-rows: repeat(var(--rows), var(--cell));
-  border: 2px solid #000;
-
-  /* fond global (optionnel) */
-  background-image: url("./img/font.jpg");
-  background-size: calc(100% / var(--cols)) calc(100% / var(--rows));
-  background-position: top left;
-}
-
-.piece {
-  width: var(--cell);
-  height: var(--cell);
-  place-self: center; /* centre dans sa cellule grid */
-  object-fit: contain;
-  z-index: 2;
-  visibility: hidden; /* rendu après placement */
-}
-
-.player {
-  z-index: 3;
-}
-.box {
-  z-index: 2;
-}
-
-/* overlay: cibles en background(s) multiples */
-.goals {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-
-  /* IMPORTANT: ces tailles sont mises à jour en JS pour coller à la cellule */
-  --cell-w: 64px;
-  --cell-h: 64px;
-
-  background-repeat: no-repeat; /* chaque layer ne se répète pas */
-  background-size: var(--cell-w) var(--cell-h); /* s'applique à tous les layers */
-}
-button {
-  background-color: rgb(46, 192, 46);
-  width: 120px;
-  padding: 10px;
-  border-radius: 20px;
-  font-weight: bold;
-  box-shadow: 4px 5px 11px rgba(9, 172, 9, 0.749);
-  margin: 10px;
-}
-.contener {
+/* Zone globale */
+#sokoban-wrapper {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  width: 100%;
 }
-/* base immobile */
-#msg.overlay {
-  position: absolute;
-  inset: 0;
+
+/* Header avec lien de retour */
+.game-header {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.btn-retour {
+  text-decoration: none;
+  color: inherit;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+  transition: transform .15s;
+}
+.btn-retour:hover {
+  transform: translateX(-3px);
+}
+
+.level-info {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* === Plateau de jeu === */
+/* Le plateau n’a plus de fond global */
+#board {
   display: grid;
-  place-items: center;
-  background: rgba(0, 0, 0, 0.35);
-  color: #fff;
-  font: 700 2rem system-ui;
+  grid-template-columns: repeat(var(--cols, 5), var(--cell, 48px));
+  grid-template-rows:    repeat(var(--rows, 5), var(--cell, 48px));
+  gap: 0;
+  position: relative;
+  background: none;                 /* PLUS de fond ici */
+  border: 3px solid #5c4033;
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  touch-action: manipulation;
+  user-select: none;
+}
+
+/* Toutes les couches passent en "display: contents"
+   pour que leurs ENFANTS soient placés directement dans le grid #board */
+#floors,
+#goals,
+#walls,
+#boxes {
+  display: contents;
+}
+
+/* Tous les éléments de case : même taille, empilables */
+.floor,
+.goal,
+.wall,
+.box,
+#player {
+  width: 100%;
+  height: 100%;
+  position: relative;   /* indispensable pour que z-index fonctionne */
+}
+
+/* ========== CALQUES ========== */
+
+/* 1. SOL (derrière tout) */
+.floor {
+  z-index: 1;
+  background-image: url('/public/projects/sokoban/assets/font.jpg'); 
+  background-size: cover;      /* ou 100% 100% selon ton image */
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* 2. CIBLE (par-dessus le sol, transparente au centre) */
+.goal {
+  z-index: 2;
+  /* Le fond coloré = couleur de la caisse attendue, visible à travers le PNG */
+  background-color: var(--goal-bg, transparent);
+  background-image: url('/public/projects/sokoban/assets/goal-shape.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* 3. MUR (par-dessus le sol) */
+.wall {
+  z-index: 5;
+  background-image: url('/public/projects/sokoban/assets/mur.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* 4. CAISSE */
+.box {
   z-index: 10;
-}
-
-/* La couche suit la grille du board */
-#walls.layer {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: repeat(var(--cols), 1fr);
-  grid-template-rows: repeat(var(--rows), 1fr);
-  pointer-events: none; /* les murs ne captent pas la souris */
-}
-
-/* Tes pièces réutilisent déjà .piece */
-.piece.wall {
-  z-index: 1; /* sous les caisses (2) et le joueur si besoin */
-  /* visibility: hidden est dans .piece ; tu rends visible via place(...,{visible:true}) */
-}
-#msg {
-  text-align: center;
-}
-
-#goals {
-  display: grid;
-  grid-template-columns: repeat(var(--cols), var(--cell));
-  grid-template-rows: repeat(var(--rows), var(--cell));
+  object-fit: contain;
   pointer-events: none;
 }
 
-
-/* La case-cible sert de "bouchon" pour masquer font.jpg sous la forme */
-.goal {
-  position: relative;
-  width: var(--cell);
-  height: var(--cell);
-
-  /* BOUCHON uni qui remplace le terrain à l'intérieur de la zone de la cible */
-  background: #eaeaea;  /* choisis la couleur "sol" souhaitée */
-
-  /* variables */
-  --goal-color: #9990;
-  --occupy-color: #0000;
+/* 5. JOUEUR (au-dessus de tout) */
+#player {
+  z-index: 20;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
 }
 
-/* Pseudo-élément qui porte le MASQUE + les 2 backgrounds empilés:
-   1) TOP: font-cible.png (toujours visible)
-   2) BOTTOM: teinte colorée (visible sous l'icône) */
-.goal::before {
-  content: "";
-  position: absolute; inset: 0;
-
-  /* 2 backgrounds: le premier est AU-DESSUS */
-  background-image:
-    url("./img/goal-shape.png"),
-    linear-gradient(var(--goal-color), var(--goal-color));
-  background-repeat: no-repeat, no-repeat;
-  background-position: center, center;
-  background-size: 100% 100%, 100% 100%;
+/* === Boutons desktop === */
+.controls {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.controls button {
+  padding: .5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #2c2c2c;
+  color: #fff;
+  cursor: pointer;
+  font-size: .95rem;
+}
+.controls button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+#next {
+  background: #2e7d32;
 }
 
-/* Overlay match/mismatch au-dessus de tout */
-.goal::after {
-  content: "";
-  position: absolute; inset: 0;
-  background: var(--occupy-color);
+/* === Message victoire === */
+#msg {
+  position: fixed;          /* ou absolute si tu veux qu'il reste dans le wrapper */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
 
-  /* même découpe, pour rester dans la forme */
-  -webkit-mask: url("./img/goal-shape.png") center/100% 100% no-repeat;
-  mask:         url("./img/goal-shape.png") center/100% 100% no-repeat;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 2rem 3rem;
+  border-radius: 1rem;
+  font-size: 1.8rem;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px); /* optionnel, joli effet */
 }
 
-/* palette (ajuste l'alpha si besoin) */
-.goal[data-goal="pink"]   { --goal-color: #ff7ab888; }
-.goal[data-goal="blue"]   { --goal-color: #58a6ff88; }
-.goal[data-goal="yellow"] { --goal-color: #ffd54d88; }
-.goal[data-goal="green"]  { --goal-color: #4cd96488; }
+#msg:not([hidden]) {
+  display: block;
+}
 
-/* états d’occupation */
-.goal[data-occupant="pink"].goal[data-goal="pink"],
-.goal[data-occupant="blue"].goal[data-goal="blue"],
-.goal[data-occupant="yellow"].goal[data-goal="yellow"],
-.goal[data-occupant="green"].goal[data-goal="green"] {
-  --occupy-color: #27ae6088;  /* match */
+
+
+.touch-controls {
+  display: flex;              
+  flex-direction: column;
+  align-items: center;
+  gap: .25rem;
+  margin-top: .5rem;
 }
-.goal[data-occupant]:not([data-occupant=""]):not(.goal[data-goal="pink"][data-occupant="pink"]):not(.goal[data-goal="blue"][data-occupant="blue"]):not(.goal[data-goal="yellow"][data-occupant="yellow"]):not(.goal[data-goal="green"][data-occupant="green"]) {
-  --occupy-color: #e74c3c88;  /* mismatch */
+.touch-controls > div {
+  display: flex;
+  gap: .25rem;
 }
-#level-info {
-  color: #333;
-  font-size: 1.1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.touch-controls button {
+  width: 56px;
+  height: 56px;
+  font-size: 1.4rem;
+  border: none;
+  border-radius: 8px;
+  background: #444;
+  color: #fff;
+  cursor: pointer;
 }
+
