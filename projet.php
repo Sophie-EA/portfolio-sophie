@@ -26,7 +26,7 @@ $project = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$project) {
     http_response_code(404);
-    echo "Projet non trouvé.";
+    header('Location: /index.php#projets');
     exit;
 }
 

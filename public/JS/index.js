@@ -152,7 +152,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Fermer lightbox
-    closeBtn.addEventListener('click', () => lightbox.classList.remove('active'));
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => lightbox.classList.remove('active'));
+    }
     lightbox.addEventListener('click', (e) => {
         if (e.target === lightbox) lightbox.classList.remove('active');
     });
@@ -161,4 +163,19 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') lightbox.classList.remove('active');
     });
+});
+document.addEventListener('DOMContentLoaded', () => {
+    const toast = document.getElementById('toast');
+    
+    if (toast) {
+        // Disparition automatique après 2.5 secondes
+        setTimeout(() => {
+            toast.classList.remove('show');
+            
+            // Supprime complètement du DOM après l'animation de sortie
+            setTimeout(() => {
+                toast.remove();
+            }, 500);
+        }, 2500);
+    }
 });

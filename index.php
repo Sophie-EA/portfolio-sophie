@@ -23,6 +23,16 @@ $template->endSection();
 // 5. Contenu principal (tout ton HTML d'ancien.html intégré ici)
 $template->section('content');
 ?>
+<?php if (isset($_GET['contact'])): 
+        $toastType = $_GET['contact'] === 'success' ? 'success' : 'error';
+        $toastMsg  = $_GET['contact'] === 'success' 
+            ? '✅ Message envoyé ! Merci.' 
+            : '❌ Erreur lors de l\'envoi.';
+    ?>
+    <div id="toast" class="toast toast-<?= $toastType ?> show">
+        <?= htmlspecialchars($toastMsg) ?>
+    </div>
+<?php endif; ?>
 
 <!-- SECTION HERO (Accueil) -->
 <section class="accueil">
@@ -222,12 +232,14 @@ $template->section('content');
 <h4 class="title-reseau">Contact via le formulaire ou les réseaux</h4>
 <section class="formContact" id="contact">
     <div class="formulaire">
-        <form action="" method="POST">
-            <label for="mail">Adresse e-mail </label>
-            <input type="email" id="mail" name="mail" required />
+        <form action="public/send-contact.php" method="POST">
+            <label for="name">Nom</label>
+            <input type="text" id="name" name="name">
+            <label for="email">Adresse e-mail </label>
+            <input type="email" id="mail" name="email" required />
             
             <label for="objet">Objet </label>
-            <input type="text" id="objet" name="objet" />
+            <input type="text" id="objet" name="subject" />
             
             <label for="message">Votre message </label>
             <textarea name="message" id="message" rows="5"></textarea>

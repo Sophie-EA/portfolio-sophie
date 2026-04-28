@@ -61,7 +61,6 @@
                     <ul>
                         <li><strong>Type :</strong> <?= htmlspecialchars($project['type'] ?? 'Projet de formation') ?></li>
                         <li><strong>Rôle :</strong> <?= htmlspecialchars($project['role'] ?? 'Développeuse web') ?></li>
-                        <li><strong>Durée :</strong> <?= htmlspecialchars($project['duration'] ?? '2 semaines') ?></li>
                         <li><strong>Année :</strong> <?= date('Y', strtotime($project['created_at'])) ?></li>
                     </ul>
                 </div>

@@ -208,7 +208,7 @@
                     </nav>
                 </div>
 
-                <a href="/index.php#projects" class="btn-retour-aside">← Retour aux projets</a>
+                <!-- <a href="/index.php#projects" class="btn-retour-aside">← Retour aux projets</a> -->
             </aside>
 
         </div>

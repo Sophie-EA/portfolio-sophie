@@ -413,24 +413,20 @@
 
     const nx = px + dx;
     const ny = py + dy;
-
     // Hors limites
     if (nx < 0 || nx >= data.cols || ny < 0 || ny >= data.rows) {
       return false;
     }
-
     // Mur
     if (data.walls.has(key(nx, ny))) {
       return false;
     }
-
     // Caisse devant
     const kNext = key(nx, ny);
     if (boxAt.has(kNext)) {
       const ax = nx + dx;
       const ay = ny + dy;
       const kAfter = key(ax, ay);
-
       // Vérifier après la caisse
       if (ax < 0 || ax >= data.cols || ay < 0 || ay >= data.rows) return false;
       if (data.walls.has(kAfter)) return false;

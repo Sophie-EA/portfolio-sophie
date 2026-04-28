@@ -606,10 +606,11 @@ textarea {
     align-items: start;
 }
 
-.projet-description h2 {
+.projet-description h2, .projet-demo-section h2 {
     color: var(--color1);
     margin-bottom: 1.5rem;
     font-size: 1.8rem;
+    margin-top: 1rem;
 }
 
 .projet-description p {
@@ -914,4 +915,33 @@ textarea {
     margin-top: 1rem;
     font-size: 1.1rem;
     opacity: 0.8;
+}
+.toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-120%);
+    padding: 14px 28px;
+    border-radius: 50px;
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.95rem;
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    pointer-events: none; /* évite qu'il bloque les clics */
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.toast-success {
+    background: #10b981; /* Vert */
+}
+
+.toast-error {
+    background: #ef4444; /* Rouge */
 }
