@@ -6,8 +6,9 @@ require_once __DIR__ . '/includes/Template.php';
 
 // 2. Récupération des projets depuis la base
 try {
-    $query = $db->query("SELECT * FROM projects ORDER BY created_at DESC");
-    $projects = $query->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $db->prepare("SELECT * FROM projects ORDER BY created_at DESC");
+    $stmt->execute();
+    $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die("Erreur récupération projets : " . $e->getMessage());
 }
@@ -59,10 +60,6 @@ $template->section('content');
 <!-- SECTION PROJETS (Dynamique - Grille régulière) -->
 <section class="card-project" id="projects">
     <h2 class="section-title">Mes Projets</h2>
-    <?php
-    // Récupérer tous les projets depuis la DB
-    $projects = $db->query("SELECT * FROM projects ORDER BY created_at DESC")->fetchAll();
-    ?>
     <div class="projects-grid">
         <?php if (empty($projects)): ?>
             <p class="no-projects">Aucun projet à afficher pour le moment.</p>
@@ -76,8 +73,8 @@ $template->section('content');
             <h3><?= htmlspecialchars($project['title']) ?></h3>
             <p class="card-content"><?= htmlspecialchars($project['short_description']) ?></p>
             <?php if (!empty($project['slug'])): ?>
-                <a href="/projet.php?slug=<?= $project['slug'] ?>" class="card-link">
-            <?php else: ?>
+                <a href="/projet.php?slug=<?= htmlspecialchars($project['slug']) ?> "class="card-link">
+                <?php else: ?>
                 <a href="/projet.php?id=<?= $project['id'] ?>" class="card-link">
             <?php endif; ?>
             Voir le projet</a>
@@ -86,7 +83,6 @@ $template->section('content');
         <?php endif; ?>
     </div>
 </section>
-
 
 <!-- SECTION À PROPOS  -->
 <section class="timeline-section" id="about">
@@ -147,11 +143,11 @@ $template->section('content');
 </section>
 
 
-<!-- SECTION AVIS (Avec ton SVG et les 4 cards) -->
+<!-- SECTION AVIS  -->
 <h2 id="titreAvis">Qu'en pense t-on?</h2>
 <section class="avis-section" id="avis">
     
-    <!-- La courbe de Bézier originale, mais allégée -->
+    <!-- La courbe de Bézier  -->
     <svg class="bezier-line" viewBox="0 0 3000 600" preserveAspectRatio="none" aria-hidden="true">
         <path 
             d="M -70 300 Q 90 330 180 530 T 300 285 T 500 290 T 780 280 T 990 280 T 1240 270 T 1450 290 T 1690 300 T 1980 290 T 2170 280 T 2330 260 T 2540 280 T 2570 300 T 2800 260"
@@ -228,7 +224,7 @@ $template->section('content');
 
 
 
-<!-- SECTION CONTACT (Formulaire + Réseaux) -->
+<!-- SECTION CONTACT  -->
 <h4 class="title-reseau">Contact via le formulaire ou les réseaux</h4>
 <section class="formContact" id="contact">
     <div class="formulaire">

@@ -1,62 +1,96 @@
 <?php
 require_once 'includes/auth.php';
-require_once '../config/db.php';
 
 $errors = [];
 $success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Récupération des données
-    $title = trim($_POST['title'] ?? '');
-    $description = trim($_POST['description'] ?? '');
-    $technologies = trim($_POST['technologies'] ?? '');
-    $github_url = trim($_POST['github_url'] ?? '');
-    $demo_url = trim($_POST['demo_url'] ?? '');
-    
-    // Validation
-    if (empty($title)) $errors[] = "Le titre est obligatoire";
-    if (empty($description)) $errors[] = "La description est obligatoire";
-    
-    // Gestion de l'image
-    $image_name = '';
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        $filename = $_FILES['image']['name'];
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        
-        if (!in_array($ext, $allowed)) {
-            $errors[] = "Format d'image non autorisé (jpg, png, gif, webp uniquement)";
-        } elseif ($_FILES['image']['size'] > 2 * 1024 * 1024) { // 2Mo max
-            $errors[] = "L'image est trop lourde (max 2Mo)";
-        } else {
-            // Nom sécurisé : timestamp + nom original nettoyé
-            $image_name = time() . '_' . preg_replace('/[^a-zA-Z0-9.-]/', '_', $filename);
-            $upload_dir = '../public/images/';
-            
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0755, true);
-            }
-            
-            move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $image_name);
-        }
+    $token = $_POST['csrf_token'] ?? '';
+    if (!verifyToken($token)) {
+        die('Token invalide. Rechargez la page.');
     }
+
+    // --- Données texte ---
+    $title = trim($_POST['title'] ?? '');
+    $slug  = trim($_POST['slug'] ?? '');
+    $description = $_POST['description'] ?? '';
+    $short_description = trim($_POST['short_description'] ?? '');
+    $technologies = trim($_POST['technologies'] ?? '');
     
-    // Si pas d'erreurs, insertion
+    $github_url = filter_input(INPUT_POST, 'github_url', FILTER_VALIDATE_URL);
+    $github_url = ($github_url !== false) ? $github_url : null;
+    
+    $demo_url = filter_input(INPUT_POST, 'demo_url', FILTER_VALIDATE_URL);
+    $demo_url = ($demo_url !== false) ? $demo_url : null;
+
+    // --- Validation ---
+    if (empty($title) || empty($slug)) {
+        $errors[] = "Le titre et le slug sont obligatoires.";
+    }
+
+    // Vérifier slug unique
+    $check = $db->prepare("SELECT id FROM projects WHERE slug = ?");
+    $check->execute([$slug]);
+    if ($check->fetch()) {
+        $errors[] = "Ce slug existe déjà.";
+    }
+
     if (empty($errors)) {
-        $stmt = $db->prepare("INSERT INTO projects (title, description, technologies, image, github_url, demo_url) 
-                              VALUES (?, ?, ?, ?, ?, ?)");
-        
-        if ($stmt->execute([$title, $description, $technologies, $image_name, $github_url, $demo_url])) {
-            $_SESSION['message'] = "Projet ajouté avec succès !";
-            header('Location: dashboard.php');
-            exit;
-        } else {
-            $errors[] = "Erreur lors de l'ajout en base de données";
+        $hero_filename = null;
+        $uploadDir = __DIR__ . '/../public/images/projects/';
+
+        // 1. Hero image
+        if (!empty($_FILES['hero_image']['tmp_name']) && $_FILES['hero_image']['error'] === UPLOAD_ERR_OK) {
+            $ext = strtolower(pathinfo($_FILES['hero_image']['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+            if (in_array($ext, $allowed)) {
+                $hero_filename = 'hero_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                move_uploaded_file($_FILES['hero_image']['tmp_name'], $uploadDir . $hero_filename);
+            }
         }
+
+        // 2. Insertion projet
+        $stmt = $db->prepare("
+            INSERT INTO projects 
+            (title, slug, description, short_description, technologies, github_url, demo_url, image, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ");
+        $stmt->execute([
+            $title, $slug, $description, $short_description, 
+            $technologies, $github_url, $demo_url, $hero_filename
+        ]);
+
+        $project_id = $db->lastInsertId();
+
+        // 3. Images de galerie (NOUVEAU)
+        if (!empty($_FILES['gallery']['tmp_name'][0])) {
+            foreach ($_FILES['gallery']['tmp_name'] as $index => $tmpName) {
+                if ($_FILES['gallery']['error'][$index] === UPLOAD_ERR_OK) {
+                    $ext = strtolower(pathinfo($_FILES['gallery']['name'][$index], PATHINFO_EXTENSION));
+                    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+                    if (in_array($ext, $allowed)) {
+                        $filename = 'gallery_' . $project_id . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                        if (move_uploaded_file($tmpName, $uploadDir . $filename)) {
+                            // Adapter le nom de ta table/colonnes si besoin
+                            $stmtImg = $db->prepare("
+                                INSERT INTO project_images (project_id, image_path, alt_text, display_order) 
+                                VALUES (?, ?, ?, 1)
+                            ");
+                            $stmtImg->execute([$project_id, $filename, '']);
+                        }
+                    }
+                }cd c:/
+            }
+        }
+
+        flashMessage('success', 'Projet et galerie créés avec succès !');
+        header('Location: dashboard.php');
+        exit;
     }
 }
-?>
 
+$csrf = generateToken();
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -64,51 +98,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Ajouter un projet</title>
     <style>
         body { font-family: Arial; max-width: 700px; margin: 0 auto; padding: 20px; }
-        .error { background: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 15px; border-radius: 4px; }
-        .error ul { margin: 0; }
-        label { display: block; margin-top: 15px; font-weight: bold; }
-        input, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; }
-        textarea { min-height: 150px; font-family: inherit; }
-        button { margin-top: 20px; padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; }
-        .back { color: #666; text-decoration: none; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input, textarea, select { width: 100%; padding: 8px; }
+        .btn { background: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        .error { color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+        small { color: #666; }
     </style>
 </head>
 <body>
-    <a href="dashboard.php" class="back">← Retour au dashboard</a>
-    <h1>Ajouter un projet</h1>
-    
+
+    <h1>➕ Ajouter un projet</h1>
+    <a href="dashboard.php">← Retour</a>
+
     <?php if (!empty($errors)): ?>
-        <div class="error">
-            <ul>
-                <?php foreach ($errors as $error): ?>
-                    <li><?= htmlspecialchars($error) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
+        <div class="error"><?= implode('<br>', array_map('htmlspecialchars', $errors)) ?></div>
     <?php endif; ?>
-    
-    <form method="POST" enctype="multipart/form-data">
-        <label>Titre du projet *</label>
-        <input type="text" name="title" required value="<?= htmlspecialchars($_POST['title'] ?? '') ?>">
-        
-        <label>Description *</label>
-        <textarea name="description" required placeholder="Décris ton projet, ton rôle, les défis..."><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
-        <small>Utilise des retours à la ligne pour structurer ton texte</small>
-        
-        <label>Technologies utilisées</label>
-        <input type="text" name="technologies" placeholder="Ex: Figma, HTML, CSS, JavaScript" value="<?= htmlspecialchars($_POST['technologies'] ?? '') ?>">
-        
-        <label>Image du projet</label>
-        <input type="file" name="image" accept="image/*">
-        <small>Format : jpg, png, gif, webf (max 2Mo)</small>
-        
-        <label>URL GitHub (optionnel)</label>
-        <input type="url" name="github_url" placeholder="https://github.com/..." value="<?= htmlspecialchars($_POST['github_url'] ?? '') ?>">
-        
-        <label>URL Démo / Figma (optionnel)</label>
-        <input type="url" name="demo_url" placeholder="https://www.figma.com/..." value="<?= htmlspecialchars($_POST['demo_url'] ?? '') ?>">
-        
-        <button type="submit">Ajouter le projet</button>
+
+    <!-- ATTENTION : enctype="multipart/form-data" est OBLIGATOIRE -->
+    <form method="POST" action="" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+
+        <div class="form-group">
+            <label>Titre</label>
+            <input type="text" name="title" required>
+        </div>
+
+        <div class="form-group">
+            <label>Slug (unique, sans espace)</label>
+            <input type="text" name="slug" required placeholder="mon-super-projet">
+        </div>
+
+        <div class="form-group">
+            <label>Description courte</label>
+            <input type="text" name="short_description">
+        </div>
+
+        <div class="form-group">
+            <label>Description complète</label>
+            <textarea name="description" rows="5"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Technologies</label>
+            <input type="text" name="technologies" placeholder="PHP, MySQL, JS...">
+        </div>
+
+        <div class="form-group">
+            <label>URL GitHub</label>
+            <input type="url" name="github_url">
+        </div>
+
+        <div class="form-group">
+            <label>URL Démo</label>
+            <input type="url" name="demo_url">
+        </div>
+
+        <div class="form-group">
+            <label>Image principale (Hero)</label>
+            <input type="file" name="hero_image" accept="image/*">
+        </div>
+
+        <!-- NOUVEAU CHAMP GALERIE -->
+        <div class="form-group">
+            <label>Images de la galerie</label>
+            <input type="file" name="gallery[]" multiple accept="image/*">
+            <small>Maintenez Ctrl pour sélectionner plusieurs images</small>
+        </div>
+
+        <button type="submit" class="btn">Créer le projet</button>
     </form>
+
 </body>
 </html>

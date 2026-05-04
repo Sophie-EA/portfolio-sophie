@@ -1,9 +1,3 @@
-<?php
-/**
- * Template standard : RebootTech, Portfolio, etc.
- * Variables disponibles : $project (array), $galleryImages (array)
- */
-?>
 <article class="projet-detail">
     
     <!-- HERO -->
@@ -48,14 +42,12 @@
                 <a href="<?= htmlspecialchars($project['github_url']) ?>" target="_blank" class="btn btn-primary">
                     <span>🐙</span> Voir sur GitHub
                 </a>
-                <?php endif; ?>
-
-                <?php if (!empty($project['demo_url'])): ?>
+                <?php endif;
+                if (!empty($project['demo_url'])): ?>
                 <a href="<?= htmlspecialchars($project['demo_url']) ?>" target="_blank" class="btn btn-secondary">
                     <span>🚀</span> Voir la démo
                 </a>
                 <?php endif; ?>
-
                 <div class="meta-card">
                     <h3>🎯 Contexte</h3>
                     <ul>
@@ -64,7 +56,6 @@
                         <li><strong>Année :</strong> <?= date('Y', strtotime($project['created_at'])) ?></li>
                     </ul>
                 </div>
-
                 <?php if (!empty($project['technologies'])): ?>
                 <div class="meta-card">
                     <h3>🛠️ Stack technique</h3>
@@ -75,7 +66,6 @@
                     </div>
                 </div>
                 <?php endif; ?>
-
                 <div class="meta-card">
                     <h3>⚡ Navigation</h3>
                     <nav class="quick">
@@ -86,7 +76,6 @@
                         <?php endif; ?>
                     </nav>
                 </div>
-
                 <a href="/index.php#projects" class="btn-retour-aside">← Retour aux projets</a>
             </aside>
         </div>

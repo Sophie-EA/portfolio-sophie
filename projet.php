@@ -30,9 +30,6 @@ if (!$project) {
     exit;
 }
 
-// ---------- 2. Routage vers le bon template ----------
-
-
 
 // ---------- 2. Images de la galerie ----------
 $stmtImages = $db->prepare("

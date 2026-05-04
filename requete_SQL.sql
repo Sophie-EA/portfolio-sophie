@@ -22,18 +22,6 @@ ENGINE=InnoDB
 AUTO_INCREMENT=12
 ;
 
-CREATE TABLE admins (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL
-);
-
-INSERT INTO admins (username, PASSWORD)
-VALUES (
-	'Soka',
-	'$2y$12$XiRbFPNZz3QBXFUSDVtDmOfEKGgxRrryNEmZvJSaYNKrLrTef/tva'
-);	
-
 CREATE TABLE `project_images` (
 	`id` INT(11) NOT NULL AUTO_INCREMENT,
 	`project_id` INT(11) NOT NULL,
@@ -48,4 +36,24 @@ CREATE TABLE `project_images` (
 COLLATE='utf8mb4_uca1400_ai_ci'
 ENGINE=InnoDB
 AUTO_INCREMENT=5
+;
+
+CREATE TABLE admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE `contacts` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(100) NOT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+	`email` VARCHAR(150) NOT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+	`subject` VARCHAR(150) NOT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+	`message` TEXT NOT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+	`created_at` TIMESTAMP NULL DEFAULT current_timestamp(),
+	PRIMARY KEY (`id`) USING BTREE
+)
+COLLATE='utf8mb4_uca1400_ai_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=4
 ;

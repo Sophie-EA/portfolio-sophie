@@ -50,7 +50,7 @@ class ConfigDB {
 // Création de la connexion PDO globale
 try {
     $configFile = __DIR__ . '/database.conf';
-    $config = new ConfigDB($configFile); // Toujours utiliser le fichier
+    $config = new ConfigDB($configFile);
     
     $dsn = "mysql:host={$config->getHost()};port={$config->getPort()};dbname={$config->getDB()};charset={$config->getCharset()}";
     
