@@ -1,1 +1,7 @@
+# Désactive l'indexation des dossiers
 Options -Indexes
+
+# Bloque l'accès direct aux fichiers commençant par un point (.env, .git, etc.)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
