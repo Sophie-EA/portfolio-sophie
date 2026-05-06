@@ -2,7 +2,7 @@
 
 CREATE TABLE `projects` (
 	`id` INT(11) NOT NULL AUTO_INCREMENT,
-	`slug` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
+	`slug` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
 	`title` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
 	`short_description` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
 	`description` TEXT NOT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
@@ -10,17 +10,18 @@ CREATE TABLE `projects` (
 	`image` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
 	`github_url` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
 	`demo_url` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
-	`created_at` DATETIME NULL DEFAULT current_timestamp(),
+	`project_date` DATE NULL DEFAULT NULL,
 	`has_custom_assets` TINYINT(1) NULL DEFAULT '0',
-	`gallery` LONGTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_bin',
 	PRIMARY KEY (`id`) USING BTREE,
 	UNIQUE INDEX `slug` (`slug`) USING BTREE,
-	CONSTRAINT `gallery` CHECK (json_valid(`gallery`))
+	UNIQUE INDEX `slug_2` (`slug`) USING BTREE,
+	UNIQUE INDEX `slug_3` (`slug`) USING BTREE
 )
 COLLATE='utf8mb4_uca1400_ai_ci'
 ENGINE=InnoDB
-AUTO_INCREMENT=12
+AUTO_INCREMENT=20
 ;
+
 
 CREATE TABLE `project_images` (
 	`id` INT(11) NOT NULL AUTO_INCREMENT,
@@ -51,9 +52,11 @@ CREATE TABLE `contacts` (
 	`subject` VARCHAR(150) NOT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
 	`message` TEXT NOT NULL COLLATE 'utf8mb4_uca1400_ai_ci',
 	`created_at` TIMESTAMP NULL DEFAULT current_timestamp(),
+	`is_read` TINYINT(1) NOT NULL DEFAULT '0',
 	PRIMARY KEY (`id`) USING BTREE
 )
 COLLATE='utf8mb4_uca1400_ai_ci'
 ENGINE=InnoDB
-AUTO_INCREMENT=4
+AUTO_INCREMENT=9
 ;
+

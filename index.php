@@ -6,7 +6,7 @@ require_once __DIR__ . '/includes/Template.php';
 
 // 2. Récupération des projets depuis la base
 try {
-    $stmt = $db->prepare("SELECT * FROM projects ORDER BY created_at DESC");
+    $stmt = $db->prepare("SELECT * FROM projects ORDER BY project_date DESC");
     $stmt->execute();
     $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
@@ -170,7 +170,7 @@ $template->section('content');
                 <!-- Card 1 -->
                 <article class="avis-card-small">
                     <div class="avis-header">
-                        <img src="/public/images/prof1.jpg" alt="" class="avis-avatar">
+                        <img src="/public/images/prof3.jpg" alt="" class="avis-avatar">
                         <div class="avis-meta">
                             <h4>Marie Dupont</h4>
                             <span>Formatrice DWWM</span>
@@ -194,7 +194,7 @@ $template->section('content');
                 <!-- Card 3 -->
                 <article class="avis-card-small">
                     <div class="avis-header">
-                        <img src="/public/images/prof3.jpg" alt="" class="avis-avatar">
+                        <img src="/public/images/prof1.jpg" alt="" class="avis-avatar">
                         <div class="avis-meta">
                             <h4>Lucas Bernard</h4>
                             <span>Collègue</span>
@@ -245,11 +245,11 @@ $template->section('content');
     </div>
     <div class="reseaux">
         <a href="https://linkedin.com" target="_blank">
-            <img src="/public/images/linkedin.png" alt="logo linkedin" />Sophie-EA
+            <img src="/public/images/linkedin.png" alt="logo linkedin" />Sophie El Asry
         </a>
         <br />
         <a href="https://github.com" target="_blank">
-            <img src="/public/images/github.png" alt="logo github" />Sophie El Asry
+            <img src="/public/images/github.png" alt="logo github" />Sophie-EA
         </a>
     </div>
 </section>

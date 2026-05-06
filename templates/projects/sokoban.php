@@ -182,7 +182,8 @@
                         <li><strong>Type :</strong> <?= htmlspecialchars($project['type'] ?? 'Projet de formation') ?></li>
                         <li><strong>Rôle :</strong> <?= htmlspecialchars($project['role'] ?? 'Développeuse web') ?></li>
                         <li><strong>Durée :</strong> <?= htmlspecialchars($project['duration'] ?? '2 semaines') ?></li>
-                        <li><strong>Année :</strong> <?= date('Y', strtotime($project['created_at'])) ?></li>
+                        <li><strong>Réalisé en :</strong><time datetime="<?= htmlspecialchars($project['project_date']) ?>">
+                             <?= date('F Y', strtotime($project['project_date'])) ?></time></li>
                     </ul>
                 </div>
 

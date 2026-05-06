@@ -1,4 +1,4 @@
-/config/db.php
+/config/database.conf
 /reset-password.php  # si tu en recréais un jour
 /requete SQL.sql 
 /todo.md

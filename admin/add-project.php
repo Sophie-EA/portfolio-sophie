@@ -2,7 +2,7 @@
 require_once 'includes/auth.php';
 
 $errors = [];
-$success = false;
+// $success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
@@ -11,21 +11,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // --- Données texte ---
-    $title = trim($_POST['title'] ?? '');
-    $slug  = trim($_POST['slug'] ?? '');
-    $description = $_POST['description'] ?? '';
+    $title             = trim($_POST['title'] ?? '');
+    $slug              = trim($_POST['slug'] ?? '');
+    $description       = $_POST['description'] ?? '';
     $short_description = trim($_POST['short_description'] ?? '');
-    $technologies = trim($_POST['technologies'] ?? '');
-    
+    $technologies      = trim($_POST['technologies'] ?? '');
+    $project_date      = $_POST['project_date'] ?? null;
+    $has_custom_assets = isset($_POST['has_custom_assets']) ? 1 : 0;
+
     $github_url = filter_input(INPUT_POST, 'github_url', FILTER_VALIDATE_URL);
-    $github_url = ($github_url !== false) ? $github_url : null;
-    
+    $github_url = ($github_url !== false && $github_url !== null) ? $github_url : null;
+
     $demo_url = filter_input(INPUT_POST, 'demo_url', FILTER_VALIDATE_URL);
-    $demo_url = ($demo_url !== false) ? $demo_url : null;
+    $demo_url = ($demo_url !== false && $demo_url !== null) ? $demo_url : null;
 
     // --- Validation ---
     if (empty($title) || empty($slug)) {
         $errors[] = "Le titre et le slug sont obligatoires.";
+    }
+    if (empty($project_date)) {
+        $errors[] = "La date de réalisation est obligatoire.";
+    }
+    if (empty($description)) {
+        $errors[] = "La description est obligatoire.";
     }
 
     // Vérifier slug unique
@@ -35,51 +43,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "Ce slug existe déjà.";
     }
 
-    if (empty($errors)) {
-        $hero_filename = null;
-        $uploadDir = __DIR__ . '/../public/images/projects/';
+    // --- Upload Hero (obligatoire en création) ---
+    $hero_filename = null;
+    $uploadDir = __DIR__ . '/../public/images/projects/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
 
-        // 1. Hero image
-        if (!empty($_FILES['hero_image']['tmp_name']) && $_FILES['hero_image']['error'] === UPLOAD_ERR_OK) {
+    if (!empty($_FILES['hero_image']['tmp_name']) && $_FILES['hero_image']['error'] === UPLOAD_ERR_OK) {
+        $imageInfo = getimagesize($_FILES['hero_image']['tmp_name']);
+        if ($imageInfo === false) {
+            $errors[] = "Le fichier hero n'est pas une image valide.";
+        } else {
             $ext = strtolower(pathinfo($_FILES['hero_image']['name'], PATHINFO_EXTENSION));
             $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
             if (in_array($ext, $allowed)) {
                 $hero_filename = 'hero_' . bin2hex(random_bytes(4)) . '.' . $ext;
-                move_uploaded_file($_FILES['hero_image']['tmp_name'], $uploadDir . $hero_filename);
+                if (!move_uploaded_file($_FILES['hero_image']['tmp_name'], $uploadDir . $hero_filename)) {
+                    $errors[] = "Erreur lors de l'enregistrement de l'image hero.";
+                    $hero_filename = null;
+                }
+            } else {
+                $errors[] = "Format image hero non autorisé (jpg, png, webp, gif).";
             }
         }
+    } else {
+        $errors[] = "L'image hero est obligatoire.";
+    }
 
-        // 2. Insertion projet
+    // --- Si tout est bon, on insère ---
+    if (empty($errors)) {
         $stmt = $db->prepare("
             INSERT INTO projects 
-            (title, slug, description, short_description, technologies, github_url, demo_url, image, created_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            (title, slug, description, short_description, technologies, github_url, demo_url, image, project_date, has_custom_assets) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
-            $title, $slug, $description, $short_description, 
-            $technologies, $github_url, $demo_url, $hero_filename
+            $title,
+            $slug,
+            $description,
+            $short_description,
+            $technologies,
+            $github_url,
+            $demo_url,
+            $hero_filename,
+            $project_date,
+            $has_custom_assets
         ]);
 
         $project_id = $db->lastInsertId();
 
-        // 3. Images de galerie (NOUVEAU)
+        // --- Images de galerie (optionnelles) ---
         if (!empty($_FILES['gallery']['tmp_name'][0])) {
             foreach ($_FILES['gallery']['tmp_name'] as $index => $tmpName) {
-                if ($_FILES['gallery']['error'][$index] === UPLOAD_ERR_OK) {
-                    $ext = strtolower(pathinfo($_FILES['gallery']['name'][$index], PATHINFO_EXTENSION));
-                    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-                    if (in_array($ext, $allowed)) {
-                        $filename = 'gallery_' . $project_id . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-                        if (move_uploaded_file($tmpName, $uploadDir . $filename)) {
-                            // Adapter le nom de ta table/colonnes si besoin
-                            $stmtImg = $db->prepare("
-                                INSERT INTO project_images (project_id, image_path, alt_text, display_order) 
-                                VALUES (?, ?, ?, 1)
-                            ");
-                            $stmtImg->execute([$project_id, $filename, '']);
-                        }
+                if ($_FILES['gallery']['error'][$index] !== UPLOAD_ERR_OK || empty($tmpName)) {
+                    continue;
+                }
+                
+                $ext = strtolower(pathinfo($_FILES['gallery']['name'][$index], PATHINFO_EXTENSION));
+                $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+                
+                if (in_array($ext, $allowed)) {
+                    $filename = 'gallery_' . $project_id . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                    if (move_uploaded_file($tmpName, $uploadDir . $filename)) {
+                        $stmtImg = $db->prepare("
+                            INSERT INTO project_images (project_id, image_path, alt_text, display_order) 
+                            VALUES (?, ?, ?, 1)
+                        ");
+                        $stmtImg->execute([$project_id, $filename, '']);
                     }
-                }cd c:/
+                }
             }
         }
 
@@ -88,6 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
+
 
 $csrf = generateToken();
 ?>
@@ -159,7 +193,20 @@ $csrf = generateToken();
             <input type="file" name="hero_image" accept="image/*">
         </div>
 
-        <!-- NOUVEAU CHAMP GALERIE -->
+        <div class="form-group">
+            <label>
+            <input type="checkbox" name="has_custom_assets" value="1">
+                Projet avec assets custom (jeu/interaction spécifique)
+            </label>
+            <small>Coche si le projet a besoin de son propre CSS/JS (ex: Sokoban)</small>
+        </div>
+
+        <div class="form-group">
+            <label>Date de réalisation du projet</label>
+            <input type="date" name="project_date" required>
+        </div>
+
+        <!-- GALERIE -->
         <div class="form-group">
             <label>Images de la galerie</label>
             <input type="file" name="gallery[]" multiple accept="image/*">

@@ -31,76 +31,118 @@ $uploadUrl = '../public/images/projects/';
 // --- TRAITEMENT POST ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    // --- 1. CSRF ---
     if (!verifyToken($_POST['csrf_token'] ?? '')) {
         die('Token invalide. Rechargez la page.');
     }
 
-    $title = trim($_POST['title'] ?? '');
-    $slug = trim($_POST['slug'] ?? '');
+    // --- 2. Récupération données ---
+    $title             = trim($_POST['title'] ?? '');
+    $slug              = trim($_POST['slug'] ?? '');
     $short_description = trim($_POST['short_description'] ?? '');
-    $description = trim($_POST['description'] ?? '');
-    $technologies = trim($_POST['technologies'] ?? '');
+    $description       = trim($_POST['description'] ?? '');
+    $technologies      = trim($_POST['technologies'] ?? '');
+    $project_date      = trim($_POST['project_date'] ?? $project['project_date']); 
+    $has_custom_assets = isset($_POST['has_custom_assets']) ? 1 : 0;
+
+    // URLs (null si vide ou invalide)
     $github_url = filter_input(INPUT_POST, 'github_url', FILTER_VALIDATE_URL);
     $github_url = ($github_url !== false && $github_url !== null) ? $github_url : null;
-    $demo_url = filter_input(INPUT_POST, 'demo_url', FILTER_VALIDATE_URL);
-    $demo_url = ($demo_url !== false && $demo_url !== null) ? $demo_url : null;
-    $has_custom_assets = isset($_POST['has_custom_assets']) ? 1 : 0;
-    $imagePath = $project['image']; // on garde l'ancienne par défaut
+    $demo_url   = filter_input(INPUT_POST, 'demo_url', FILTER_VALIDATE_URL);
+    $demo_url   = ($demo_url !== false && $demo_url !== null) ? $demo_url : null;
 
-    // Validation
+    // Image : on garde l'ancienne par défaut
+    $imagePath = $project['image'];
+
+    // --- 3. Validation simple ---
     if (empty($title) || empty($description)) {
         flashMessage('warning', 'Titre et description obligatoires.');
-    } elseif (empty($slug) || !preg_match('/^[a-z0-9\-]+$/', $slug)) {
+    } 
+    elseif (empty($slug) || !preg_match('/^[a-z0-9\-]+$/', $slug)) {
         flashMessage('warning', 'Slug invalide (minuscules, chiffres, tirets uniquement).');
-    } else {
+    } 
+    else {
         // Vérifier unicité du slug (hors projet actuel)
         $check = $db->prepare("SELECT id FROM projects WHERE slug = ? AND id != ?");
         $check->execute([$slug, $id]);
+
         if ($check->fetch()) {
             flashMessage('warning', 'Ce slug est déjà utilisé par un autre projet.');
-        } else {
-
+        } 
+        else {
+            // =========================
             // --- UPLOAD IMAGE HERO ---
+            // =========================
             if (!empty($_FILES['hero_image']['tmp_name']) && $_FILES['hero_image']['error'] === UPLOAD_ERR_OK) {
-                $ext = strtolower(pathinfo($_FILES['hero_image']['name'], PATHINFO_EXTENSION));
-                $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-                if (in_array($ext, $allowed)) {
-                    $newName = 'hero_' . $id . '_' . uniqid() . '.' . $ext;
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0755, true);
-                    }
-                    if (move_uploaded_file($_FILES['hero_image']['tmp_name'], $uploadDir . $newName)) {
-                        // Supprimer l'ancienne hero si elle existe
-                        if (!empty($project['image']) && file_exists($uploadDir . $project['image'])) {
-                            unlink($uploadDir . $project['image']);
+                
+                $imageInfo = getimagesize($_FILES['hero_image']['tmp_name']);
+                
+                if ($imageInfo === false) {
+                    flashMessage('warning', "Le fichier hero n'est pas une image valide.");
+                } 
+                else {
+                    $ext = strtolower(pathinfo($_FILES['hero_image']['name'], PATHINFO_EXTENSION));
+                    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+                    
+                    if (in_array($ext, $allowed)) {
+                        $newName = 'hero_' . $id . '_' . uniqid() . '.' . $ext;
+                        
+                        if (!is_dir($uploadDir)) {
+                            mkdir($uploadDir, 0755, true);
                         }
-                        $imagePath = $newName;
+                        
+                        if (move_uploaded_file($_FILES['hero_image']['tmp_name'], $uploadDir . $newName)) {
+                            // Supprimer l'ancienne hero si elle existe
+                            if (!empty($project['image']) && file_exists($uploadDir . $project['image'])) {
+                                unlink($uploadDir . $project['image']);
+                            }
+                            $imagePath = $newName;
+                        } 
+                        else {
+                            flashMessage('warning', "Erreur lors de l'enregistrement de l'image hero.");
+                        }
+                    } 
+                    else {
+                        flashMessage('warning', 'Format image hero non autorisé (jpg, png, webp, gif).');
                     }
-                } else {
-                    flashMessage('warning', 'Format image hero non autorisé (jpg, png, webp, gif).');
                 }
             }
 
-            // --- UPDATE TABLE PROJECTS ---
-            $sql = "UPDATE projects SET 
-                        title = ?, slug = ?, short_description = ?, description = ?, 
-                        technologies = ?, github_url = ?, demo_url = ?, image = ?, 
-                        has_custom_assets = ?
-                    WHERE id = ?";
-            $stmt = $db->prepare($sql);
+            // =========================
+            // --- UPDATE SQL ----------
+            // =========================
+            $stmt = $db->prepare("
+                UPDATE projects 
+                SET title = ?, slug = ?, short_description = ?, 
+                    description = ?, technologies = ?, github_url = ?, 
+                    demo_url = ?, image = ?, project_date = ?, has_custom_assets = ?
+                WHERE id = ?
+            ");
+            
             $stmt->execute([
-                $title, $slug, $short_description, $description,
-                $technologies, $github_url, $demo_url, $imagePath,
-                $has_custom_assets, $id
+                $title, 
+                $slug, 
+                $short_description, 
+                $description, 
+                $technologies, 
+                $github_url, 
+                $demo_url, 
+                $imagePath,     
+                $project_date,   
+                $has_custom_assets,
+                $id
             ]);
 
-            // --- GESTION GALERIE EXISTANTE ---
+            // =========================
+            // --- GESTION GALERIE -----
+            // =========================
+            
             // Mise à jour alt et ordre
             if (!empty($_POST['gallery_meta'])) {
                 foreach ($_POST['gallery_meta'] as $imgId => $meta) {
-                    $alt = trim($meta['alt'] ?? '');
+                    $alt   = trim($meta['alt'] ?? '');
                     $order = filter_var($meta['order'] ?? 0, FILTER_VALIDATE_INT);
-                    $upd = $db->prepare("UPDATE project_images SET alt_text = ?, display_order = ? WHERE id = ? AND project_id = ?");
+                    $upd   = $db->prepare("UPDATE project_images SET alt_text = ?, display_order = ? WHERE id = ? AND project_id = ?");
                     $upd->execute([$alt, $order, $imgId, $id]);
                 }
             }
@@ -109,9 +151,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($_POST['delete_gallery'])) {
                 foreach ($_POST['delete_gallery'] as $delId) {
                     $delId = (int)$delId;
-                    $find = $db->prepare("SELECT image_path FROM project_images WHERE id = ? AND project_id = ?");
+                    $find  = $db->prepare("SELECT image_path FROM project_images WHERE id = ? AND project_id = ?");
                     $find->execute([$delId, $id]);
                     $found = $find->fetch();
+                    
                     if ($found && file_exists($uploadDir . $found['image_path'])) {
                         unlink($uploadDir . $found['image_path']);
                     }
@@ -119,10 +162,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // --- AJOUT NOUVELLES IMAGES GALERIE ---
+            // Ajout nouvelles images galerie
             if (!empty($_FILES['new_gallery']['tmp_name'][0])) {
                 foreach ($_FILES['new_gallery']['tmp_name'] as $key => $tmpName) {
-                    if ($_FILES['new_gallery']['error'][$key] !== UPLOAD_ERR_OK) continue;
+                    if ($_FILES['new_gallery']['error'][$key] !== UPLOAD_ERR_OK) {
+                        continue;
+                    }
+                    
                     $ext = strtolower(pathinfo($_FILES['new_gallery']['name'][$key], PATHINFO_EXTENSION));
                     if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
                         $newName = 'gallery_' . $id . '_' . uniqid() . '.' . $ext;
@@ -140,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -207,6 +254,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label>URL Démo</label>
         <input type="url" name="demo_url" value="<?= htmlspecialchars((string)($_POST['demo_url'] ?? $project['demo_url'] ?? '')) ?>">
     </div>
+
+    <div>
+        <label for="project_date">Date de réalisation du projet</label>
+        <input type="date" id="project_date" name="project_date" 
+        value="<?= htmlspecialchars($project['project_date'] ?? '') ?>" required>
+    </div>
+
 
     <div class="form-group">
         <label>

@@ -2,7 +2,7 @@
 require_once 'includes/auth.php';
 
 // Récupération des projets
-$stmt = $db->prepare("SELECT id, title, created_at FROM projects ORDER BY created_at DESC");
+$stmt = $db->prepare("SELECT id, title, project_date FROM projects ORDER BY project_date DESC");
 $stmt->execute();
 $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -55,7 +55,7 @@ unset($_SESSION['flash']);
             <?php foreach ($projects as $project): ?>
             <tr>
                 <td><?= htmlspecialchars($project['title']) ?></td>
-                <td><?= date('d/m/Y', strtotime($project['created_at'])) ?></td>
+                <td><?= date('d/m/Y', strtotime($project['project_date'])) ?></td>
                 <td>
                     <a href="edit-project.php?id=<?= $project['id'] ?>" class="btn btn-edit">Modifier</a>
 

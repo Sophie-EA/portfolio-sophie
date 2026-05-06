@@ -5,31 +5,21 @@ require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/includes/Template.php';
 
 // ---------- 1. Récupération du projet ----------
-
 $slug = $_GET['slug'] ?? null;
-$id   = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
-if (!$slug && !$id) {
-    header('Location: /');
-    exit;
-}
-
-if ($slug) {
-    $stmt = $db->prepare("SELECT * FROM projects WHERE slug = ?");
-    $stmt->execute([$slug]);
-} else {
-    $stmt = $db->prepare("SELECT * FROM projects WHERE id = ?");
-    $stmt->execute([$id]);
-}
-
-$project = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$project) {
-    http_response_code(404);
+if (empty($slug)) {
     header('Location: /index.php#projets');
     exit;
 }
 
+$stmt = $db->prepare("SELECT * FROM projects WHERE slug = ?");
+$stmt->execute([$slug]);
+$project = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$project) {
+    header('Location: /index.php#projets');
+    exit;
+}
 
 // ---------- 2. Images de la galerie ----------
 $stmtImages = $db->prepare("
@@ -51,10 +41,12 @@ $template->endSection();
 
 // CSS spécifique projet
 $template->section('extra_css');
-if (!empty($project['has_custom_assets']) && !empty($project['slug'])) {
-    $css_path = "/public/projects/{$project['slug']}/css/game.css";
-    if (file_exists(__DIR__ . $css_path)) {
-        echo '<link rel="stylesheet" href="' . $css_path . '">';
+$isCustom = !empty($project['has_custom_assets']);
+
+if ($isCustom) {
+    $cssDisk = __DIR__ . "/public/projects/{$project['slug']}/css/game.css";
+    if (file_exists($cssDisk)) {
+        echo '<link rel="stylesheet" href="/public/projects/' . urlencode($project['slug']) . '/css/game.css">';
     }
 }
 $template->endSection();
@@ -62,44 +54,44 @@ $template->endSection();
 // ---------- 4. Contenu principal ----------
 $template->section('content');
 
-$isCustom = !empty($project['has_custom_assets']) && !empty($project['slug']);
-
 if ($isCustom) {
-    // Template spécifique (Sokoban, etc.)
-    $custom_template = __DIR__ . "/templates/projects/{$project['slug']}.php";
-    if (file_exists($custom_template)) {
-        include $custom_template;
+    $customTemplate = __DIR__ . "/templates/projects/{$project['slug']}.php";
+    if (file_exists($customTemplate)) {
+        include $customTemplate;
     } else {
         echo '<p>Template spécifique en cours de développement...</p>';
-        echo '<a href="/index.php#projects" class="btn-retour">← Retour aux projets</a>';
+        echo '<a href="/index.php#projets" class="btn-retour">← Retour aux projets</a>';
     }
 } else {
-    // Template standard (RebootTech, Portfolio...)
     include __DIR__ . '/templates/projects/standard.php';
 }
 
-// Lightbox (nécessaire pour tous les projets qui ont une galerie ou des images cliquables)
-?>
-<div id="lightbox" class="lightbox">
-    <span class="lightbox-close">&times;</span>
-    <img class="lightbox-img" src="" alt="">
-    <div class="lightbox-caption"></div>
-</div>
+if (!empty($galleryImages)) {
+    ?>
+    <div id="lightbox" class="lightbox">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-img" src="" alt="">
+        <div class="lightbox-caption"></div>
+    </div>
+    <?php
+}
 
-<?php
 $template->endSection();
 
-// ---------- 5. JS en fin de page ----------
+// ---------- 5. JS ----------
 $template->section('extra_js');
+
 if ($isCustom) {
-    $js_path = "/public/projects/{$project['slug']}/js/game.js";
-    if (file_exists(__DIR__ . $js_path)) {
-        echo '<script src="' . $js_path . '"></script>';
+    $jsDisk = __DIR__ . "/public/projects/{$project['slug']}/js/game.js";
+    if (file_exists($jsDisk)) {
+        echo '<script src="/public/projects/' . urlencode($project['slug']) . '/js/game.js"></script>';
     }
-} else {
-    // Lightbox + effets galerie pour les projets standards
+}
+
+if (!empty($galleryImages)) {
     echo '<script src="/public/js/galerie.js"></script>';
 }
+
 $template->endSection();
 
 // ---------- 6. Rendu ----------
