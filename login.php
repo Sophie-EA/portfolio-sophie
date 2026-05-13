@@ -43,10 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
     
     <form method="POST">
-        <label>Pseudo :</label>
+        <label for="username">Pseudo :</label>
         <input type="text" name="username" required>
         
-        <label>Mot de passe :</label>
+        <label for="password">Mot de passe :</label>
         <input type="password" name="password" required>
         
         <button type="submit">Se connecter</button>

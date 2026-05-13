@@ -68,7 +68,7 @@ $template->section('content');
             <article class="card">
                 <div class="card-image">
                     <img src="/public/images/projects/<?= htmlspecialchars($project['image']) ?>"
-                    alt="<?= htmlspecialchars($project['title']) ?>" />
+                    alt="<?= htmlspecialchars($project['title']) ?>" loading="lazy" />
                 </div>
             <h3><?= htmlspecialchars($project['title']) ?></h3>
             <p class="card-content"><?= htmlspecialchars($project['short_description']) ?></p>
@@ -170,7 +170,7 @@ $template->section('content');
                 <!-- Card 1 -->
                 <article class="avis-card-small">
                     <div class="avis-header">
-                        <img src="/public/images/prof3.jpg" alt="" class="avis-avatar">
+                        <img src="/public/images/prof3.jpg" alt="image de profile" class="avis-avatar" loading="lazy">
                         <div class="avis-meta">
                             <h4>Marie Dupont</h4>
                             <span>Formatrice DWWM</span>
@@ -182,7 +182,7 @@ $template->section('content');
                 <!-- Card 2 -->
                 <article class="avis-card-small">
                     <div class="avis-header">
-                        <img src="/public/images/prof2.jpg" alt="" class="avis-avatar">
+                        <img src="/public/images/prof2.jpg" alt="image de profile" class="avis-avatar" loading="lazy">
                         <div class="avis-meta">
                             <h4>Jean Martin</h4>
                             <span>Lead Dev</span>
@@ -194,7 +194,7 @@ $template->section('content');
                 <!-- Card 3 -->
                 <article class="avis-card-small">
                     <div class="avis-header">
-                        <img src="/public/images/prof1.jpg" alt="" class="avis-avatar">
+                        <img src="/public/images/prof1.jpg" alt="image de profile" class="avis-avatar" loading="lazy">
                         <div class="avis-meta">
                             <h4>Lucas Bernard</h4>
                             <span>Collègue</span>
@@ -206,7 +206,7 @@ $template->section('content');
                 <!-- Card 4 -->
                 <article class="avis-card-small">
                     <div class="avis-header">
-                        <img src="/public/images/prof4.png" alt="" class="avis-avatar">
+                        <img src="/public/images/prof4.png" alt="image de profile" class="avis-avatar" loading="lazy">
                         <div class="avis-meta">
                             <h4>Sarah Cohen</h4>
                             <span>Responsable RH</span>
@@ -228,28 +228,33 @@ $template->section('content');
 <h4 class="title-reseau">Contact via le formulaire ou les réseaux</h4>
 <section class="formContact" id="contact">
     <div class="formulaire">
-        <form action="public/send-contact.php" method="POST">
+        <form action="public/send-contact.php" method="POST" id="contact-form">
             <label for="name">Nom</label>
-            <input type="text" id="name" name="name">
+            <input type="text" id="name" name="name" aria-describedby="name-error">
+            <span id="name-error" class="error-message" aria-live="polite"></span>
+
             <label for="email">Adresse e-mail </label>
-            <input type="email" id="mail" name="email" required />
+            <input type="email" id="email" name="email" aria-describedby="email-error" required />
+            <span id="email-error" class="error-message" aria-live="polite"></span>
             
             <label for="objet">Objet </label>
-            <input type="text" id="objet" name="subject" />
-            
+            <input type="text" id="objet" name="subject" aria-describedby="objet-error"/>
+            <span id="objet-error" class="error-message" aria-live="polite"></span>
+
             <label for="message">Votre message </label>
-            <textarea name="message" id="message" rows="5"></textarea>
+            <textarea name="message" id="message" rows="5" aria-describedby="message-error"></textarea>
+            <span id="message-error" class="error-message" aria-live="polite"></span>
             
             <input type="submit" name="envoi" id="envoi" value="Envoyer" />
         </form>
     </div>
     <div class="reseaux">
         <a href="https://linkedin.com" target="_blank">
-            <img src="/public/images/linkedin.png" alt="logo linkedin" />Sophie El Asry
+            <img src="/public/images/linkedin.png" alt="logo linkedin" loading="lazy"/>Sophie El Asry
         </a>
         <br />
         <a href="https://github.com" target="_blank">
-            <img src="/public/images/github.png" alt="logo github" />Sophie-EA
+            <img src="/public/images/github.png" alt="logo github" loading="lazy"/>Sophie-EA
         </a>
     </div>
 </section>

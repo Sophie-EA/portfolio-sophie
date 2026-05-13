@@ -313,13 +313,14 @@ input, textarea {
   border: 1px solid #ddd;
   border-radius: 8px;
   font-family: "Ubuntu", sans-serif;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   transition: border 0.3s ease;
 }
 
 input:focus, textarea:focus {
   border-color: var(--color2);
-  outline: none;
+  outline: 3px solid var(--color2);
+  outline-offset: 2px;
 }
 
 textarea {
@@ -944,4 +945,12 @@ textarea {
 
 .toast-error {
     background: #ef4444; /* Rouge */
+}
+
+/* message erreur */
+
+form > span {
+color: red;
+padding: 0;
+margin: 0;
 }

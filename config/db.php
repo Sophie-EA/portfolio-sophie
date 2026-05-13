@@ -56,8 +56,7 @@ class ConfigDB {
 // --- Utilisation strictement liée au fichier ---
 try {
     $configFile = __DIR__ . '/database.conf';
-    $config = new ConfigDB($configFile); // Échouera si le fichier manque ou est vide
-    
+    $config = new ConfigDB($configFile);     
     $dsn = sprintf(
         "mysql:host=%s;port=%s;dbname=%s;charset=%s",
         $config->getHost(),
@@ -71,9 +70,9 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false
     ]);
-} catch (Exception $e) {
-    die("Erreur de configuration : " . $e->getMessage());
 } catch (PDOException $e) {
+    die("Erreur de configuration : " . $e->getMessage());
+} catch (Exception $e) {
     die("Erreur de connexion BDD : " . $e->getMessage());
 }
 ?>

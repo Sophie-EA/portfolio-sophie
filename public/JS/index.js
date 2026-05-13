@@ -152,17 +152,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Fermer lightbox
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => lightbox.classList.remove('active'));
-    }
-    lightbox.addEventListener('click', (e) => {
-        if (e.target === lightbox) lightbox.classList.remove('active');
-    });
+    // if (closeBtn) {
+    //     closeBtn.addEventListener('click', () => lightbox.classList.remove('active'));
+    // }
+    // lightbox.addEventListener('click', (e) => {
+    //     if (e.target === lightbox) lightbox.classList.remove('active');
+    // });
     
-    // Fermer avec Echap
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') lightbox.classList.remove('active');
-    });
+    // // Fermer avec Echap
+    // document.addEventListener('keydown', (e) => {
+    //     if (e.key === 'Escape') lightbox.classList.remove('active');
+    // });
 });
 document.addEventListener('DOMContentLoaded', () => {
     const toast = document.getElementById('toast');
@@ -178,4 +178,83 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 500);
         }, 2500);
     }
+});
+
+
+// -------------------------------------------------------------------------------
+const form = document.getElementById('contact-form');
+const fields = {
+    name: document.getElementById('name'),
+    email: document.getElementById('email'),
+    objet: document.getElementById('objet'),
+    message: document.getElementById('message')
+};
+
+// Valide un champ et retourne true si valide
+function validateField(field) {
+  const value = field.value.trim();
+  console.log(field.id);
+  
+  const errorEl = document.getElementById(field.id + '-error');
+  let isValid = true;
+  let errorMessage = '';
+
+  if (field.id === 'name') {
+    if (value === '') {
+        isValid = false;
+        errorMessage = 'Le nom est requis.';
+    }
+  }
+  if (field.id === 'email') {
+    if (value === '') {
+      isValid = false;
+      errorMessage = 'L’email est requis.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      isValid = false;
+      errorMessage = 'Format d’email invalide.';
+    }
+  }
+  if (field.id === 'objet') {
+    if (value === '') {
+        isValid = false;
+        errorMessage = "Veuillez saisir l'objet du message"
+    }
+  }
+  if (field.id === 'message') {
+    if (value === '') {
+        isValid = false;
+        errorMessage = "Je ne vois pas votre message :("
+    }
+  }
+
+  if (!isValid) {
+    field.classList.add('invalid');
+    errorEl.textContent = errorMessage;
+    errorEl.style.display = 'block'; 
+  } else {
+    field.classList.remove('invalid');
+    errorEl.textContent = '';
+    errorEl.style.display = 'none';
+  }
+  return isValid;
+}
+
+// Validation au blur
+Object.values(fields).forEach(field => {
+  field.addEventListener('blur', () => validateField(field));
+  // On pourrait aussi écouter 'input' après un premier blur pour correction live
+});
+
+// Validation finale
+form.addEventListener('submit', (e) => {
+  let formIsValid = true;
+  Object.values(fields).forEach(field => {
+    if (!validateField(field)) formIsValid = false;
+  });
+  if (!formIsValid) {
+    e.preventDefault();
+    // Focus sur le premier champ invalide
+    const firstInvalid = document.querySelector('.invalid');
+    if (firstInvalid) firstInvalid.focus();
+  }
 });
