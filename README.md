@@ -1,5 +1,5 @@
 # Portfolio | Sophie EL ASRY
-**Développeuse Web Back-end — PHP / MySQL / JavaScript**
+**Développeuse Web Back-end — PHP / MySQL**
 
 Portfolio full-stack avec interface d'administration sécurisée, moteur de template PHP personnalisé et architecture MVC-like.
 

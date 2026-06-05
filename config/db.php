@@ -55,7 +55,7 @@ class ConfigDB {
 
 // --- Utilisation strictement liée au fichier ---
 try {
-    $configFile = __DIR__ . '/database.conf';
+    $configFile = __DIR__ . '/database.php';
     $config = new ConfigDB($configFile);     
     $dsn = sprintf(
         "mysql:host=%s;port=%s;dbname=%s;charset=%s",
