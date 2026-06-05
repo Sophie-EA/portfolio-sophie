@@ -1,5 +1,5 @@
 <?php
-// 1. Démarrer la session UNE SEULE FOIS (évite les "headers already sent")
+// 1. Démarrer la session 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -13,3 +13,6 @@ if (!isset($_SESSION['admin_id'])) {
     exit;
 }
 ?>
+
+
+

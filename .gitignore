@@ -1,4 +1,4 @@
 /config/database.conf
 /reset-password.php  # si tu en recréais un jour
-/requete SQL.sql 
+/requete_SQL.sql 
 /todo.md

@@ -75,7 +75,6 @@ if (!empty($galleryImages)) {
     </div>
     <?php
 }
-
 $template->endSection();
 
 // ---------- 5. JS ----------

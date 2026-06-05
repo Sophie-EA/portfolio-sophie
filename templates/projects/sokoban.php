@@ -220,6 +220,5 @@
 
 </article>
 
-<!-- JS spécifique Sokoban -->
-<script src="/public/projects/sokoban/js/game.js"></script>
+
 

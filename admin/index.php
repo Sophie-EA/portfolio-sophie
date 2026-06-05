@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Pas connecté ? → vers la page de login à la racine (AVEC le slash)
+// Pas connecté ? → vers la page de login à la racine
 if (!isset($_SESSION['admin_id'])) {
     header('Location: /login.php');
     exit;
