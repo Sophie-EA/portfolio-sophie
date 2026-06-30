@@ -1,4 +1,4 @@
-/config/database.php
+/config/database.conf
 /reset-password.php 
 /requete_SQL.sql 
 /todo.md

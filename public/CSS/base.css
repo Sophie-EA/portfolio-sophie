@@ -25,11 +25,19 @@
   --shadow-hover: 0 10px 20px rgba(0,0,0,0.15);
 }
 
+
+/* Évite que quoi que ce soit ne dépasse */
+img, canvas, svg, iframe, video {
+  max-width: 100%;
+  height: auto;
+}
+
 * {
   margin: 0;
   padding: 0;
   list-style: none;
   box-sizing: border-box;
+  min-width: 0;
 }
 
 body {

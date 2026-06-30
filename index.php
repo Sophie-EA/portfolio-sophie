@@ -37,24 +37,24 @@ $template->section('content');
 
 <!-- SECTION HERO (Accueil) -->
 <section class="accueil">
-    <p class="pres">
-        À travers chaque projet, je relève des défis techniques avec exigence
-        et passion. <br />
-        Mon objectif : concrétiser des idées utiles dans un web plus sobre et
-        bien fait.
-    </p>
-    <img
-        src="/public/images/arbre-1000x1000-2.svg"
-        alt="Arbre de vie dans une main"
-        class="arbre"
-        id="arbre"
-    />
     <div class="col3">
         <h1>
             Sophie <br />
             El Asry
         </h1>
     </div>
+    <img
+    src="/public/images/arbre-1000x1000-2.svg"
+    alt="Arbre de vie dans une main"
+    class="arbre"
+    id="arbre"
+    />
+    <p class="pres">
+        À travers chaque projet, je relève des défis techniques avec exigence
+        et passion. <br />
+        Mon objectif : concrétiser des idées utiles dans un web plus sobre et
+        bien fait.
+    </p>
 </section>
 
 <!-- SECTION PROJETS (Dynamique - Grille régulière) -->
@@ -144,7 +144,7 @@ $template->section('content');
 
 
 <!-- SECTION AVIS  -->
-<h2 id="titreAvis">Qu'en pense t-on?</h2>
+<h2 id="titreAvis">Ce qui fait la différence</h2>
 <section class="avis-section" id="avis">
     
     <!-- La courbe de Bézier  -->
@@ -159,7 +159,7 @@ $template->section('content');
         />
     </svg>
 
-    <h2 class="avis-title">Témoignages</h2>
+    <h2 class="avis-title">Architecture, sécurité et accessibilité</h2>
 
     <div class="carousel-multi">
         <button class="carousel-arrow prev" aria-label="Précédent">❮</button>
@@ -170,49 +170,49 @@ $template->section('content');
                 <!-- Card 1 -->
                 <article class="avis-card-small">
                     <div class="avis-header">
-                        <img src="/public/images/prof3.jpg" alt="image de profile" class="avis-avatar" loading="lazy">
+                        <!-- <img src="/public/images/prof3.jpg" alt="image de profile" class="avis-avatar" loading="lazy"> -->
                         <div class="avis-meta">
-                            <h4>Marie Dupont</h4>
-                            <span>Formatrice DWWM</span>
+                            <h4>Base de données structurée</h4>
+                            <span class="atoutIcon">🗂️ Modélisation MERISE & SQL</span>
                         </div>
                     </div>
-                    <p>"Sophie apporte une rigueur managériale rare. Sa capacité à structurer un projet est un atout majeur."</p>
+                    <p>Conception relationnelle normalisée, clés primaires/étrangères cohérentes, tables optimisées pour un suivi de projets. Requêtes préparées PDO pour sécuriser les échanges avec la base de données MySQL.</p>
                 </article>
 
                 <!-- Card 2 -->
                 <article class="avis-card-small">
                     <div class="avis-header">
-                        <img src="/public/images/prof2.jpg" alt="image de profile" class="avis-avatar" loading="lazy">
+                        <!-- <img src="/public/images/prof2.jpg" alt="image de profile" class="avis-avatar" loading="lazy"> -->
                         <div class="avis-meta">
-                            <h4>Jean Martin</h4>
-                            <span>Lead Dev</span>
+                            <h4>Architecture modulaire</h4>
+                            <span class="atoutIcon">🧩Système de templates PHP</span>
                         </div>
                     </div>
-                    <p>"Un sens du détail exemplaire. Ses maquettes sont toujours soignées et pertinentes."</p>
+                    <p>Séparation stricte entre logique métier, configuration et présentation. Réutilisation des composants (header, footer, cards), code maintenable et évolutif selon les bonnes pratiques.</p>
                 </article>
 
                 <!-- Card 3 -->
                 <article class="avis-card-small">
                     <div class="avis-header">
-                        <img src="/public/images/prof1.jpg" alt="image de profile" class="avis-avatar" loading="lazy">
+                        <!-- <img src="/public/images/prof1.jpg" alt="image de profile" class="avis-avatar" loading="lazy"> -->
                         <div class="avis-meta">
-                            <h4>Lucas Bernard</h4>
-                            <span>Collègue</span>
+                            <h4>Sécurité & authentification</h4>
+                            <span class="atoutIcon">🔒 Administration sécurisée</span>
                         </div>
                     </div>
-                    <p>"Communication claire et deadlines respectées. Travail d'équipe impeccable."</p>
+                    <p>Espace administrateur protégé par authentification, gestion de rôles, protection des identifiants BDD hors versioning (Git), et requêtes paramétrées contre les injections SQL.</p>
                 </article>
 
                 <!-- Card 4 -->
                 <article class="avis-card-small">
                     <div class="avis-header">
-                        <img src="/public/images/prof4.png" alt="image de profile" class="avis-avatar" loading="lazy">
+                        <!-- <img src="/public/images/prof4.png" alt="image de profile" class="avis-avatar" loading="lazy"> -->
                         <div class="avis-meta">
-                            <h4>Sarah Cohen</h4>
-                            <span>Responsable RH</span>
+                            <h4>Responsive & sémantique</h4>
+                            <span>📱 Intégration accessible et mobile-first</span>
                         </div>
                     </div>
-                    <p>"Son parcours atypique lui donne une perspective unique sur les besoins métier."</p>
+                    <p>Structure HTML5 sémantique, navigation clavier fonctionnelle, design responsive adapté à tous les écrans. Approche centrée sur l'expérience utilisateur et l'inclusion.<p>
                 </article>
 
             </div>

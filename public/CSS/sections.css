@@ -5,10 +5,11 @@
    ======================================== */
 .accueil {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* grid-template-columns: repeat(3, minmax(0, 1fr)); */
+  grid-template-columns: 25% 50% 25%;
   align-items: end;
   align-content: center;
-  justify-items: stretch;
+  /* justify-items: stretch; */
   width: 100%;
   min-height: 100svh;
   gap: 1rem;
@@ -17,10 +18,10 @@
 
 .pres {
   display: block;
-  margin: 40px;
+  margin: 6% -3%;
   text-align: justify;
   text-justify: auto;
-  width: 70%;
+  width: 90%;
   font-size: 1.1rem;
   line-height: 1.6;
 }
@@ -33,6 +34,7 @@
   align-items: center;
   justify-content: center;
   animation: float 6s ease-in-out infinite;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.25);
 }
 
 @keyframes float {
@@ -41,10 +43,10 @@
 }
 
 h1 {
-  place-self: end center;
+  place-self: start center;
   font-family: "Tahu!", sans-serif;
   font-size: 3rem;
-  margin: auto;
+  margin: 6% auto;
   color: var(--color1);
 }
 
@@ -275,10 +277,10 @@ h1 {
 }
 
 .formContact {
-  max-width: var(--max-width);
   margin: 0 auto;
   padding: clamp(2rem, 5vw, 3rem);
   display: flex;
+  flex-direction: column;
   gap: 3rem;
   align-items: center;
 }
@@ -290,7 +292,9 @@ h1 {
 }
 
 .formulaire {
-  width: 60%;
+  max-width: 600px;
+  width: 100%;
+  /* width: 60%; */
   background: white;
   padding: 2rem;
   border-radius: var(--radius);
@@ -346,9 +350,9 @@ textarea {
 }
 
 .reseaux {
-  width: 40%;
+  width: 100%;
   display: flex;
-  flex-direction: column;
+  /* flex-direction: column; */
   justify-content: center;
   align-items: center;
   gap: 1.5rem;
@@ -375,7 +379,7 @@ textarea {
    8. TIMELINE
    ======================================== */
 .timeline-section {
-  padding: 4rem 1rem;
+  padding: 2rem 1rem;
   max-width: 1000px;
   margin: 0 auto;
   position: relative;
@@ -390,7 +394,6 @@ textarea {
 
 .timeline-container {
   position: relative;
-  padding: 2rem 0;
 }
 
 .timeline-container::before {
@@ -402,10 +405,11 @@ textarea {
   height: 100%;
   background: linear-gradient(to bottom, var(--color1) 0%, var(--color2) 100%);
   top: 0;
+  bottom: 0;
 }
 
 .timeline-item {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
   position: relative;
   width: 100%;
   display: flex;
@@ -580,17 +584,39 @@ textarea {
 }
 
 .projet-image-hero {
-    max-width: 800px;
-    margin: 2rem auto 0;
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow);
+  position: relative;
+  display: inline-block; /* ou block selon ta mise en page */
+  max-width: 420px;      /* ajuste selon la taille souhaitée */
+  width: 90%;
+  margin-top: 5%;
+  border-radius: 16px;   /* adoucit les angles du screenshot */
+  overflow: hidden;
+    /* Ombre sophistiquée : deux couches, teinte chaude */
+  box-shadow: 
+    0 25px 50px -12px rgba(90, 40, 100, 0.12),  /* ombre violette douce */
+    0 10px 20px -5px rgba(0, 0, 0, 0.04);        /* ombre proche légère */
 }
 
 .projet-image-hero img {
-    width: 100%;
-    height: auto;
-    display: block;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.projet-image-hero::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 45%;           /* zone de fondu plus large qu'avant */
+  background: linear-gradient(
+    to top, 
+    var(--color3) 0%,
+    rgba(232, 224, 213, 0.837) 40%, 
+    transparent 100%
+  );
+  pointer-events: none; /* pour ne pas bloquer les clics */
 }
 
 /* Grid contenu */

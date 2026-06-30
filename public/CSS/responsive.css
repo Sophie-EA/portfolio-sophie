@@ -11,25 +11,27 @@
   .carousel-arrow.next {
     right: -20px;
   }
-}
-
-@media (max-width: 800px) {
   .accueil {
     grid-template-columns: 1fr;
     padding: 1rem;
   }
   .arbre {
-    width: 60%;
-    margin-bottom: 2rem;
+    width: 50%;
+    margin-bottom: -1rem;
   }
   h1 {
+    position: relative;
     font-size: 2rem;
     margin-bottom: 1rem;
+    top: -50%;
   }
   .pres {
-    width: 90%;
+    width: 75%;
     margin: 20px auto;
   }
+}
+
+@media (max-width: 900px) {
 }
 
 @media (max-width: 768px) {
@@ -218,6 +220,9 @@
 
   .bezier-line {
     opacity: 0.2;
+  }
+  .projet-meta {
+  margin: 5%;
   }
 }
 

@@ -32,7 +32,8 @@ Portfolio full-stack avec interface d'administration sécurisée, moteur de temp
 ## 👤 Auteur
 **Sophie EL ASRY** — Développeuse Web & Web Mobile  
 📍 Valence (26) — Disponible pour un CDI Fullstack orienté Back-end  
-💼 [LinkedIn](linkedin.com/in/sophie-el-asry) | 🌐 [Portfolio en ligne](url-quand-déployé)
+💼 [LinkedIn](linkedin.com/in/sophie-el-asry) | 
+<!-- 🌐 [Portfolio en ligne](url-quand-déployé) -->
 
 ---
 *Projet personnel réalisé dans le cadre du titre professionnel DWWM.*

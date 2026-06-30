@@ -41,32 +41,31 @@ p {
 
 /* === CONTENEUR GLOBAL === */
 #sokoban-game-outer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 70vh;   /* ou 80vh selon ta page */
-  gap: 1rem;
+  width: 100%;
+  padding: 0 1rem;        /* la marge de sécurité que tu voulais */
+  box-sizing: border-box;
 }
 
-/* === LE PLATEAU : taille figée, pas de surprise === */
+/* === LE PLATEAU === */
 #board {
   display: grid;
-  grid-template-columns: repeat(var(--cols), var(--cell));
-  grid-template-rows: repeat(var(--rows), var(--cell));
-  
-  /* Taille explicite : calcule exactement rows × cols × cellule */
-  width: calc(var(--cols) * var(--cell));
-  height: calc(var(--rows) * var(--cell));
-  
-  /* Plus de fit-content, plus de margin auto buggé */
-  position: relative;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+
+  /* Le plateau remplit la largeur dispo sans jamais dépasser */
+  width: 100%;
+  max-width: 500px;       /* taille max confortable sur desktop */
+  margin: 0 auto;         /* centré */
+
+  /* Magie : le ratio largeur/hauteur suit exactement cols/rows */
+  aspect-ratio: var(--cols) / var(--rows);
 }
 
 .container-grid {
-display: flex;
-justify-content: center;
+  display: flex;
+  justify-content: center;
 }
+
 
 /* === LES 4 CALQUES : transparents pour le grid === */
 /* Ils disparaissent du layout et leurs enfants (.floor, .wall, etc.) 
@@ -133,6 +132,8 @@ justify-content: center;
 /* 5. Joueur */
 #player {
   z-index: 20;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   pointer-events: none;
   display: block;
@@ -149,7 +150,7 @@ justify-content: center;
 }
 
 /* Style de base TOUS les boutons du jeu */
-.controls button {                       /* si tu gardes un lien/bouton retour dans la zone jeu */
+.controls button {
   padding: 0.6rem 1.25rem;
   border: none;
   border-radius: 8px;

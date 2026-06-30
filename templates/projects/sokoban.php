@@ -95,7 +95,7 @@
                                     </div>
                                     <div class="level-info">
                                         <span id="current-level-name">Nv 1</span>
-                                        <span id="level-counter">/ 9</span>
+                                        <span id="level-counter">/ 10</span>
                                     </div>
                                 </div>
 
