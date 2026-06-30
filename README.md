@@ -24,8 +24,8 @@ Portfolio full-stack avec interface d'administration sécurisée, moteur de temp
 
 ## 🖼️ Aperçu
 
-![page d'accueil portfolio](image-1.png)
-![page projet Sokoban](<Page_projet - Sokoban - Jeu de Puzzle - Portfolio.png>)
+![page d'accueil portfolio](<Screenshot 2026-06-30 at 11-35-16 Portfolio Sophie El Asry - Développeuse Web.png>)
+![page projet Sokoban](<Screenshot 2026-06-30 at 11-36-10 Sokoban — Moteur de jeu JS - Portfolio.png>)
 ![dashboard administrateur](dashboard_admin.png)
 ---
 
